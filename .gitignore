@@ -6,7 +6,8 @@ target/
 # Local environment files
 .env
 application-local.yml
-
+s-name: org.postgresql.Driver
++    url: ${DB_UL:jdbc:mysql://localhost:3306/ai_contract_manager?server==}{}{}river-clas
 # Python
 __pycache__/
 .venv/
