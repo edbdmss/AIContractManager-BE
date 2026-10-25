@@ -1,8 +1,8 @@
 spring:
   application:
-    name: ai-contract-manager
+    name: AIContractManager
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/ai_contract_manager?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    url: ${DB_URL:jdbc:mysql://localhost:3306/AIContractManager?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
