@@ -27,12 +27,15 @@ public class OAuthStateStore {
     }
 
     public void validateAndConsume(OAuthProvider provider, String redirectUri, String state) {
-        PendingAuthorization authorization = pending.remove(state);
+        PendingAuthorization authorization = state == null ? null : pending.get(state);
         if (authorization == null
                 || authorization.createdAt().plus(STATE_TTL).isBefore(Instant.now())
                 || authorization.provider() != provider
                 || !authorization.redirectUri().equals(redirectUri)) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "유효하지 않거나 만료된 OAuth state입니다.");
+        }
+        if (!pending.remove(state, authorization)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "이미 사용된 OAuth state입니다.");
         }
     }
 

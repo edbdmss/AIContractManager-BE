@@ -6,6 +6,8 @@ import com.aicontractmanager.auth.service.OAuthProfile;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -34,19 +36,14 @@ public class OAuthUserRepository {
             UserRow user = byProvider.get();
             jdbcTemplate.update(
                     "UPDATE users SET email = ?, name = ?, deleted_at = NULL WHERE id = ?",
-                    email, name, user.id()
+                    email, name, user.id().toString()
             );
             return new AuthUser(user.id(), email, name, provider, false);
         }
 
         Optional<UserRow> byEmail = findByEmail(email);
         if (byEmail.isPresent()) {
-            UserRow user = byEmail.get();
-            jdbcTemplate.update(
-                    "UPDATE users SET provider = ?, provider_user_id = ?, name = ?, deleted_at = NULL WHERE id = ?",
-                    provider.name(), profile.providerUserId(), name, user.id()
-            );
-            return new AuthUser(user.id(), email, name, provider, false);
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 다른 로그인 방식에 사용 중인 이메일입니다.");
         }
 
         UUID id = UUID.randomUUID();

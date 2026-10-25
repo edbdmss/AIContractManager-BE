@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -44,7 +46,7 @@ public class AuthController {
             @PathVariable String provider,
             @RequestParam String redirectUri
     ) {
-        OAuthProvider oauthProvider = OAuthProvider.valueOf(provider.toUpperCase());
+        OAuthProvider oauthProvider = parseProvider(provider);
         String state = stateStore.create(oauthProvider, redirectUri);
         String clientId = oauthProvider == OAuthProvider.KAKAO ? kakaoClientId : naverClientId;
         String authorizeUri = oauthProvider == OAuthProvider.KAKAO
@@ -67,7 +69,7 @@ public class AuthController {
             @PathVariable String provider,
             @Valid @RequestBody OAuthLoginRequest request
     ) {
-        OAuthProvider oauthProvider = OAuthProvider.valueOf(provider.toUpperCase());
+        OAuthProvider oauthProvider = parseProvider(provider);
         stateStore.validateAndConsume(oauthProvider, request.redirectUri(), request.state());
         return authService.login(
                 oauthProvider,
@@ -75,5 +77,13 @@ public class AuthController {
                 request.redirectUri(),
                 request.state()
         );
+    }
+
+    private OAuthProvider parseProvider(String provider) {
+        try {
+            return OAuthProvider.valueOf(provider.toUpperCase(java.util.Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "지원하지 않는 OAuth provider입니다.");
+        }
     }
 }
