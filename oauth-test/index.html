@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>소셜 로그인 테스트</title>
+  <style>
+    body { max-width: 640px; margin: 48px auto; padding: 0 20px; font: 16px/1.5 system-ui, sans-serif; color: #222; }
+    h1 { font-size: 24px; }
+    button { padding: 10px 14px; margin: 4px 8px 4px 0; cursor: pointer; }
+    button:disabled { cursor: wait; opacity: .55; }
+    #status { margin-top: 20px; padding: 12px; border: 1px solid #bbb; white-space: pre-wrap; overflow-wrap: anywhere; }
+    #status.error { border-color: #c33; color: #a22; }
+    dl { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px; overflow-wrap: anywhere; }
+    dt { font-weight: bold; }
+    dd { margin: 0; }
+    #result { margin-top: 24px; }
+    #token { overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <h1>소셜 로그인 테스트</h1>
+  <p>백엔드: <code>http://localhost:8080</code></p>
+  <button type="button" data-provider="kakao">카카오 로그인</button>
+  <button type="button" data-provider="naver">네이버 로그인</button>
+  <div id="status" role="status" aria-live="polite">로그인 방법을 선택하세요.</div>
+  <section id="result" hidden>
+    <h2>로그인 결과</h2>
+    <dl id="profile"></dl>
+    <p>Access token: <code id="token"></code></p>
+    <button type="button" id="copy-token">토큰 복사</button>
+  </section>
+  <script>
+    const apiBase = "http://localhost:8080";
+    const redirectUri = "http://localhost:3000/oauth/callback";
+    const pendingKey = "oauth-test-pending";
+    const status = document.getElementById("status");
+    const result = document.getElementById("result");
+    const buttons = document.querySelectorAll("[data-provider]");
+    let accessToken = "";
+
+    function setStatus(message, error = false) {
+      status.textContent = message;
+      status.classList.toggle("error", error);
+    }
+
+    function setBusy(busy) {
+      buttons.forEach(button => button.disabled = busy);
+    }
+
+    async function api(path, options) {
+      const response = await fetch(`${apiBase}${path}`, options);
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(body.message || body.detail || `서버 응답: ${response.status}`);
+      }
+      return body;
+    }
+
+    async function startLogin(provider) {
+      setBusy(true);
+      result.hidden = true;
+      setStatus(`${provider} 로그인 페이지를 여는 중...`);
+      try {
+        const params = new URLSearchParams({ redirectUri });
+        const data = await api(`/api/v1/auth/${provider}/authorize?${params}`);
+        const destination = new URL(data.authorizationUrl);
+        const expectedHost = provider === "kakao" ? "kauth.kakao.com" : "nid.naver.com";
+        if (destination.protocol !== "https:" || destination.hostname !== expectedHost || !data.state) {
+          throw new Error("인가 URL 또는 state가 올바르지 않습니다.");
+        }
+        sessionStorage.setItem(pendingKey, JSON.stringify({ provider, state: data.state }));
+        window.location.assign(destination.href);
+      } catch (error) {
+        setBusy(false);
+        setStatus(`로그인 시작 실패: ${error.message}`, true);
+      }
+    }
+
+    async function finishLogin() {
+      const params = new URLSearchParams(window.location.search);
+      if (!params.has("code") && !params.has("error")) return;
+
+      setBusy(true);
+      const pending = JSON.parse(sessionStorage.getItem(pendingKey) || "null");
+      sessionStorage.removeItem(pendingKey);
+      history.replaceState(null, "", "/");
+
+      if (params.has("error")) {
+        setStatus(`로그인이 취소되었거나 거부되었습니다: ${params.get("error_description") || params.get("error")}`, true);
+        setBusy(false);
+        return;
+      }
+      if (!pending || pending.state !== params.get("state")) {
+        setStatus("state가 일치하지 않습니다. 첫 화면에서 로그인을 다시 시작하세요.", true);
+        setBusy(false);
+        return;
+      }
+
+      setStatus(`${pending.provider} 인증 코드를 확인하는 중...`);
+      try {
+        const data = await api(`/api/v1/auth/${pending.provider}/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: params.get("code"), state: params.get("state"), redirectUri })
+        });
+        accessToken = data.accessToken || "";
+        const profile = document.getElementById("profile");
+        profile.replaceChildren();
+        for (const [label, value] of Object.entries({
+          제공자: data.provider,
+          사용자ID: data.userId,
+          이메일: data.email,
+          이름: data.name,
+          신규가입: data.newUser ? "예" : "아니요",
+          만료까지: `${data.expiresIn}초`
+        })) {
+          const term = document.createElement("dt");
+          const description = document.createElement("dd");
+          term.textContent = label;
+          description.textContent = value ?? "없음";
+          profile.append(term, description);
+        }
+        document.getElementById("token").textContent = accessToken ? `${accessToken.slice(0, 12)}...` : "발급되지 않음";
+        result.hidden = false;
+        setStatus("로그인 성공. 사용자 정보와 토큰이 발급되었습니다.");
+      } catch (error) {
+        setStatus(`로그인 완료 실패: ${error.message}`, true);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    buttons.forEach(button => button.addEventListener("click", () => startLogin(button.dataset.provider)));
+    document.getElementById("copy-token").addEventListener("click", async () => {
+      if (!accessToken) return;
+      try {
+        await navigator.clipboard.writeText(accessToken);
+        setStatus("토큰을 클립보드에 복사했습니다.");
+      } catch {
+        setStatus("토큰 복사에 실패했습니다.", true);
+      }
+    });
+    finishLogin();
+  </script>
+</body>
+</html>
