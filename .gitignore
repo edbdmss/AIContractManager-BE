@@ -1,5 +1,6 @@
 .idea/
 target/
+/var/documents/
 *.iml
 .DS_Store
 
