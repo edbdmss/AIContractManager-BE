@@ -9,7 +9,7 @@ def pdf_to_images(pdf_bytes: bytes) -> list[Image.Image]:
     with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
         for page in doc:
             pix = page.get_pixmap(
-                matrix=fitz.Matrix(2, 2),
+                matrix=fitz.Matrix(1, 1),
                 alpha=False
             )
 
