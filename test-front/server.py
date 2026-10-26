@@ -2,21 +2,22 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).parent
-PAGE = (ROOT / "index.html").read_bytes()
 
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = self.path.split("?", 1)[0]
-        if path not in ("/", "/oauth/callback"):
+        filename = "wireframe.html" if path == "/wireframe.html" else "index.html"
+        if path not in ("/", "/oauth/callback", "/wireframe.html"):
             self.send_error(404)
             return
+        page = (ROOT / filename).read_bytes()
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
-        self.send_header("Content-Length", str(len(PAGE)))
+        self.send_header("Content-Length", str(len(page)))
         self.end_headers()
-        self.wfile.write(PAGE)
+        self.wfile.write(page)
 
     def log_message(self, *_):
         return
