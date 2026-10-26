@@ -36,6 +36,14 @@ PROMPT = """
 6. title과 category는 필수이며, 제목이 명확하지 않으면 문서 유형을 바탕으로
    일반적인 제목을 생성한다.
 7. JSON 객체만 반환한다.
+8. category는 반드시 FITNESS, TELECOM, HOUSING,
+   INSURANCE, RENTAL, OTHER 중 하나로 작성한다.
+9. 계약서에 월 납부 금액이 없고 총액만 있는 경우,
+   임의로 월 금액을 계산하지 말고 monthlyAmount는 null로 작성한다.
+10. 해지 마감일이 정확히 계산되지 않는 경우,
+    cancellationDeadline은 null로 작성한다.
+11. 반환 JSON에는 위에서 정의한 11개 키를 모두 포함한다.
+    값이 없는 필드는 키를 생략하지 말고 null로 작성한다.
 """
 
 
