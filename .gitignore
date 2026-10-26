@@ -197,3 +197,18 @@ buildNumber.properties
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/maven,java,visualstudiocode,intellij
+
+# Python 가상환경
+ai/capstone_ai/
+
+# 로컬 테스트 결과
+ai/analysis_result.json
+ai/masked_test.pdf
+
+# OCR 개발 코드 (중간발표 제외)
+ai/masking/ocr_processor.py
+
+ai/.env
+ai/**/__pycache__/
+ai/masked_results/
+ai/contract_test_10/
