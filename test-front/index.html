@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AIContractManager API 테스트</title>
+  <style>
+    :root { color-scheme: light; font: 15px/1.5 system-ui, -apple-system, sans-serif; color: #202124; background: #f5f7fa; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    main { width: min(1120px, calc(100% - 32px)); margin: 32px auto 64px; }
+    header { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 24px; }
+    h1, h2 { margin: 0; line-height: 1.2; }
+    h1 { font-size: 26px; }
+    h2 { font-size: 18px; margin-bottom: 16px; }
+    .muted { color: #68707d; }
+    .panel { background: #fff; border: 1px solid #dfe3e8; border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+    .grid { display: grid; grid-template-columns: minmax(260px, 360px) 1fr; gap: 16px; align-items: start; }
+    .field { display: grid; gap: 6px; margin-bottom: 12px; }
+    label { font-weight: 650; }
+    input, select, textarea, button { font: inherit; }
+    input, select, textarea { width: 100%; border: 1px solid #c8ced8; border-radius: 5px; padding: 9px 10px; background: #fff; }
+    textarea { min-height: 72px; resize: vertical; }
+    button { border: 1px solid #1f5eff; border-radius: 5px; padding: 9px 12px; background: #1f5eff; color: #fff; cursor: pointer; }
+    button.secondary { background: #fff; color: #1f5eff; }
+    button.danger { background: #b42318; border-color: #b42318; }
+    button:disabled { opacity: .55; cursor: wait; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .status { padding: 10px 12px; border-radius: 5px; background: #eef4ff; color: #174ea6; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .status.error { background: #fff0ef; color: #a32116; }
+    .contract-list { display: grid; gap: 10px; }
+    .contract { border: 1px solid #dfe3e8; border-radius: 6px; padding: 14px; }
+    .contract.selected { border-color: #1f5eff; box-shadow: 0 0 0 2px #dce7ff; }
+    .contract-title { display: flex; justify-content: space-between; gap: 12px; font-weight: 700; }
+    .badge { display: inline-block; border-radius: 999px; padding: 2px 8px; background: #edf0f4; font-size: 12px; font-weight: 600; }
+    .meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 16px; margin: 10px 0 12px; color: #56606e; }
+    .document-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #edf0f4; }
+    .document-row:last-child { border-bottom: 0; }
+    .document-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .hidden { display: none !important; }
+    @media (max-width: 760px) { main { width: min(100% - 20px, 600px); margin-top: 20px; } header, .grid { display: block; } header > div:last-child { margin-top: 12px; } .meta { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <p class="muted">AIContractManager API 테스트</p>
+      <h1>계약과 문서 흐름 확인</h1>
+    </div>
+    <div class="muted">백엔드 <code id="api-label"></code></div>
+  </header>
+
+  <section id="login-panel" class="panel">
+    <h2>로그인</h2>
+    <p class="muted">카카오 또는 네이버로 로그인한 뒤 계약 등록과 문서 업로드를 테스트합니다.</p>
+    <div class="actions">
+      <button type="button" data-provider="kakao">카카오 로그인</button>
+      <button type="button" data-provider="naver">네이버 로그인</button>
+    </div>
+  </section>
+
+  <section id="app-panel" class="hidden">
+    <div id="status" class="status" role="status" aria-live="polite">로그인 후 계약을 등록하세요.</div>
+    <div class="grid" style="margin-top:16px">
+      <div>
+        <section class="panel">
+          <h2>계약 등록</h2>
+          <form id="contract-form">
+            <div class="field"><label for="title">계약명</label><input id="title" required maxlength="200" placeholder="주택 임대차 계약"></div>
+            <div class="field"><label for="category">분류</label><input id="category" required maxlength="50" placeholder="RENTAL"></div>
+            <div class="field"><label for="providerName">제공자명</label><input id="providerName" maxlength="200" placeholder="테스트 임대인"></div>
+            <div class="field"><label for="contractStartDate">계약 시작일</label><input id="contractStartDate" type="date"></div>
+            <div class="field"><label for="contractEndDate">계약 종료일</label><input id="contractEndDate" type="date"></div>
+            <div class="field"><label for="autoRenewalDate">자동 갱신일</label><input id="autoRenewalDate" type="date"></div>
+            <div class="field"><label for="cancellationDeadline">해지 신청 마감일</label><input id="cancellationDeadline" type="date"></div>
+            <div class="field"><label for="monthlyAmount">월 금액</label><input id="monthlyAmount" type="number" min="0" step="0.01" placeholder="500000"></div>
+            <div class="field"><label for="penaltyAmount">위약금</label><input id="penaltyAmount" type="number" min="0" step="0.01"></div>
+            <div class="field"><label for="cancellationTerms">해지 조건</label><textarea id="cancellationTerms"></textarea></div>
+            <div class="field"><label for="plainSummary">쉬운 설명</label><textarea id="plainSummary"></textarea></div>
+            <button type="submit">계약 등록</button>
+          </form>
+        </section>
+      </div>
+      <div>
+        <section class="panel">
+          <div class="contract-title"><h2>내 계약</h2><button id="refresh-contracts" class="secondary" type="button">새로고침</button></div>
+          <div id="contract-list" class="contract-list"><p class="muted">계약이 없습니다.</p></div>
+        </section>
+        <section id="document-panel" class="panel hidden">
+          <h2>문서 업로드</h2>
+          <p id="selected-contract" class="muted"></p>
+          <form id="document-form" class="actions">
+            <input id="document-file" type="file" accept=".pdf,.hwp,.hwpx,.docx,.jpg,.jpeg,.png" required>
+            <button type="submit">업로드</button>
+          </form>
+          <div id="document-list" style="margin-top:12px"></div>
+        </section>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+  const apiBase = "http://localhost:8080";
+  const redirectUri = "http://localhost:3000/oauth/callback";
+  const pendingKey = "contract-test-pending";
+  const tokenKey = "contract-test-token";
+  const statusEl = document.getElementById("status");
+  const loginPanel = document.getElementById("login-panel");
+  const appPanel = document.getElementById("app-panel");
+  const contractList = document.getElementById("contract-list");
+  const documentPanel = document.getElementById("document-panel");
+  const documentList = document.getElementById("document-list");
+  let accessToken = sessionStorage.getItem(tokenKey) || "";
+  let selectedContractId = "";
+
+  document.getElementById("api-label").textContent = apiBase;
+
+  function setStatus(message, error = false) {
+    statusEl.textContent = message;
+    statusEl.classList.toggle("error", error);
+  }
+
+  async function api(path, options = {}) {
+    const headers = new Headers(options.headers || {});
+    if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
+    const response = await fetch(`${apiBase}${path}`, { ...options, headers });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.message || body.detail || `서버 응답 ${response.status}`);
+    return body;
+  }
+
+  function setLoggedIn() {
+    loginPanel.classList.toggle("hidden", Boolean(accessToken));
+    appPanel.classList.toggle("hidden", !accessToken);
+    if (accessToken) loadContracts();
+  }
+
+  async function startLogin(provider) {
+    try {
+      setStatus(`${provider} 로그인 페이지를 여는 중...`);
+      const data = await api(`/api/v1/auth/${provider}/authorize?redirectUri=${encodeURIComponent(redirectUri)}`);
+      const destination = new URL(data.authorizationUrl);
+      const expectedHost = provider === "kakao" ? "kauth.kakao.com" : "nid.naver.com";
+      if (destination.protocol !== "https:" || destination.hostname !== expectedHost || !data.state) throw new Error("인가 URL 검증에 실패했습니다.");
+      sessionStorage.setItem(pendingKey, JSON.stringify({ provider, state: data.state }));
+      location.assign(destination.href);
+    } catch (error) { setStatus(`로그인 시작 실패: ${error.message}`, true); }
+  }
+
+  async function finishLogin() {
+    const params = new URLSearchParams(location.search);
+    if (!params.has("code") && !params.has("error")) { setLoggedIn(); return; }
+    const pending = JSON.parse(sessionStorage.getItem(pendingKey) || "null");
+    sessionStorage.removeItem(pendingKey);
+    history.replaceState(null, "", "/");
+    if (params.has("error")) { setStatus(`로그인이 취소되었습니다: ${params.get("error_description") || params.get("error")}`, true); return; }
+    if (!pending || pending.state !== params.get("state")) { setStatus("OAuth state가 일치하지 않습니다.", true); return; }
+    try {
+      const data = await api(`/api/v1/auth/${pending.provider}/login`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: params.get("code"), state: params.get("state"), redirectUri })
+      });
+      accessToken = data.accessToken;
+      sessionStorage.setItem(tokenKey, accessToken);
+      setStatus(`로그인 성공: ${data.name || data.email || data.userId}`);
+      setLoggedIn();
+    } catch (error) { setStatus(`로그인 완료 실패: ${error.message}`, true); }
+  }
+
+  function value(id) { return document.getElementById(id).value || null; }
+  function contractBody() {
+    const amount = value("monthlyAmount");
+    const penalty = value("penaltyAmount");
+    return { title: value("title"), category: value("category"), providerName: value("providerName"),
+      contractStartDate: value("contractStartDate"), contractEndDate: value("contractEndDate"),
+      autoRenewalDate: value("autoRenewalDate"), cancellationDeadline: value("cancellationDeadline"),
+      monthlyAmount: amount ? Number(amount) : null, penaltyAmount: penalty ? Number(penalty) : null,
+      cancellationTerms: value("cancellationTerms"), plainSummary: value("plainSummary") };
+  }
+
+  async function loadContracts() {
+    try {
+      const contracts = await api("/api/v1/contracts");
+      contractList.replaceChildren();
+      if (!contracts.length) { contractList.innerHTML = '<p class="muted">계약이 없습니다.</p>'; return; }
+      contracts.forEach(renderContract);
+    } catch (error) { setStatus(`계약 조회 실패: ${error.message}`, true); }
+  }
+
+  function renderContract(contract) {
+    const card = document.createElement("article");
+    card.className = "contract";
+    card.dataset.id = contract.id;
+    const amount = contract.monthlyAmount == null ? "미입력" : `${Number(contract.monthlyAmount).toLocaleString()} ${contract.currency || "KRW"}`;
+    card.innerHTML = `<div class="contract-title"><span></span><span class="badge"></span></div><div class="meta"></div><div class="actions"></div>`;
+    card.querySelector(".contract-title span").textContent = contract.title;
+    card.querySelector(".badge").textContent = contract.status;
+    card.querySelector(".meta").textContent = `분류: ${contract.category} | 제공자: ${contract.providerName || "없음"} | 월 금액: ${amount} | 금액 확인: ${contract.amountVerified ? "완료" : "필요"}`;
+    const actions = card.querySelector(".actions");
+    const select = document.createElement("button"); select.className = "secondary"; select.textContent = "문서 보기"; select.onclick = () => selectContract(contract);
+    actions.append(select);
+    if (!contract.amountVerified && contract.monthlyAmount != null) { const verify = document.createElement("button"); verify.textContent = "금액 확인"; verify.onclick = () => verifyAmount(contract); actions.append(verify); }
+    const remove = document.createElement("button"); remove.className = "danger"; remove.textContent = "삭제"; remove.onclick = () => deleteContract(contract.id); actions.append(remove);
+    contractList.append(card);
+  }
+
+  async function createContract(event) {
+    event.preventDefault();
+    try { await api("/api/v1/contracts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(contractBody()) });
+      event.target.reset(); setStatus("계약을 등록했습니다."); await loadContracts();
+    } catch (error) { setStatus(`계약 등록 실패: ${error.message}`, true); }
+  }
+
+  async function verifyAmount(contract) {
+    const entered = prompt("계약서 원문에서 확인한 월 금액을 입력하세요.", contract.monthlyAmount);
+    if (entered === null) return;
+    try { await api(`/api/v1/contracts/${contract.id}/verify-amount`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ monthlyAmount: Number(entered) }) }); setStatus("월 금액을 확인했습니다."); await loadContracts(); }
+    catch (error) { setStatus(`금액 확인 실패: ${error.message}`, true); }
+  }
+
+  async function deleteContract(id) {
+    if (!confirm("이 계약을 목록에서 삭제할까요?")) return;
+    try { await api(`/api/v1/contracts/${id}`, { method: "DELETE" }); setStatus("계약을 삭제했습니다."); documentPanel.classList.add("hidden"); await loadContracts(); }
+    catch (error) { setStatus(`계약 삭제 실패: ${error.message}`, true); }
+  }
+
+  async function selectContract(contract) {
+    selectedContractId = contract.id; documentPanel.classList.remove("hidden"); document.getElementById("selected-contract").textContent = `${contract.title} (${contract.id})`;
+    await loadDocuments();
+  }
+
+  async function loadDocuments() {
+    try { const documents = await api(`/api/v1/contracts/${selectedContractId}/documents`); documentList.replaceChildren();
+      if (!documents.length) { documentList.innerHTML = '<p class="muted">등록된 문서가 없습니다.</p>'; return; }
+      documents.forEach(documentItem => { const row = document.createElement("div"); row.className = "document-row"; const name = document.createElement("span"); name.textContent = `${documentItem.originalFilename} (${documentItem.fileSize.toLocaleString()} bytes)`; const actions = document.createElement("div"); actions.className = "document-actions"; const download = document.createElement("button"); download.className = "secondary"; download.textContent = "다운로드"; download.onclick = () => downloadDocument(documentItem); const remove = document.createElement("button"); remove.className = "danger"; remove.textContent = "삭제"; remove.onclick = () => deleteDocument(documentItem.id); actions.append(download, remove); row.append(name, actions); documentList.append(row); });
+    } catch (error) { setStatus(`문서 조회 실패: ${error.message}`, true); }
+  }
+
+  async function uploadDocument(event) { event.preventDefault(); const file = document.getElementById("document-file").files[0]; if (!file) return;
+    const form = new FormData(); form.append("file", file);
+    try { await api(`/api/v1/contracts/${selectedContractId}/documents`, { method: "POST", body: form }); event.target.reset(); setStatus("문서를 업로드했습니다."); await loadDocuments(); }
+    catch (error) { setStatus(`문서 업로드 실패: ${error.message}`, true); }
+  }
+
+  async function downloadDocument(documentItem) { try { const response = await fetch(`${apiBase}/api/v1/contracts/${selectedContractId}/documents/${documentItem.id}/download`, { headers: { Authorization: `Bearer ${accessToken}` } }); if (!response.ok) throw new Error(`서버 응답 ${response.status}`); const blob = await response.blob(); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = documentItem.originalFilename; link.click(); URL.revokeObjectURL(link.href); } catch (error) { setStatus(`문서 다운로드 실패: ${error.message}`, true); } }
+  async function deleteDocument(id) { if (!confirm("이 문서를 목록에서 삭제할까요?")) return; try { await api(`/api/v1/contracts/${selectedContractId}/documents/${id}`, { method: "DELETE" }); setStatus("문서를 삭제했습니다."); await loadDocuments(); } catch (error) { setStatus(`문서 삭제 실패: ${error.message}`, true); } }
+
+  document.querySelectorAll("[data-provider]").forEach(button => button.addEventListener("click", () => startLogin(button.dataset.provider)));
+  document.getElementById("contract-form").addEventListener("submit", createContract);
+  document.getElementById("document-form").addEventListener("submit", uploadDocument);
+  document.getElementById("refresh-contracts").addEventListener("click", loadContracts);
+  finishLogin();
+</script>
+</body>
+</html>
