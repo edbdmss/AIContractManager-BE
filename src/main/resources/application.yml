@@ -22,6 +22,10 @@ server:
 app:
   document:
     storage-dir: ${DOCUMENT_STORAGE_DIR:./var/documents}
+  ai:
+    enabled: ${AI_ENABLED:true}
+    base-url: ${AI_BASE_URL:http://localhost:8000}
+    analyze-path: ${AI_ANALYZE_PATH:/internal/analysis/contracts}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8081}
   jwt:
