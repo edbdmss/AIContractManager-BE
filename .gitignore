@@ -200,3 +200,4 @@ buildNumber.properties
 
 ai/capstone_ai/
 ai/analysis_result.json
+ai/masked_test.pdf
