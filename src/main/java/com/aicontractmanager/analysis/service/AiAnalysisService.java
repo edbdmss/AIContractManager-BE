@@ -2,6 +2,8 @@ package com.aicontractmanager.analysis.service;
 
 import com.aicontractmanager.analysis.dto.AiAnalysisResponse;
 import com.aicontractmanager.analysis.repository.AiAnalysisRepository;
+import com.aicontractmanager.contract.domain.Contract;
+import com.aicontractmanager.contract.dto.ContractRequest;
 import com.aicontractmanager.contract.service.ContractService;
 import com.aicontractmanager.document.domain.Document;
 import com.aicontractmanager.document.service.DocumentService;
@@ -17,6 +19,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Service
@@ -73,6 +76,7 @@ public class AiAnalysisService {
                 throw new IllegalStateException("AI 서비스가 분석 결과를 반환하지 않았습니다.");
             }
             repository.complete(analysisId, result, confidence(result));
+            applyToContract(userId, contractId, result);
             return repository.find(analysisId);
         } catch (RestClientException | IllegalStateException exception) {
             repository.fail(analysisId, exception.getMessage());
@@ -95,5 +99,52 @@ public class AiAnalysisService {
         if (value == null || !value.isNumber()) return null;
         BigDecimal confidence = value.decimalValue();
         return confidence.max(BigDecimal.ZERO).min(BigDecimal.ONE).doubleValue();
+    }
+
+    private void applyToContract(UUID userId, UUID contractId, JsonNode result) {
+        Contract existing = contracts.get(userId, contractId);
+        JsonNode fields = result.hasNonNull("contract") ? result.get("contract") : result;
+        ContractRequest request = new ContractRequest(
+                text(fields, existing.title(), "title", "contractTitle"),
+                text(fields, existing.category(), "category", "contractCategory"),
+                text(fields, existing.providerName(), "providerName", "provider_name", "lessor", "merchantName"),
+                date(fields, existing.contractStartDate(), "contractStartDate", "contract_start_date", "startDate"),
+                date(fields, existing.contractEndDate(), "contractEndDate", "contract_end_date", "endDate", "expiryDate"),
+                date(fields, existing.autoRenewalDate(), "autoRenewalDate", "auto_renewal_date", "renewalDate"),
+                date(fields, existing.cancellationDeadline(), "cancellationDeadline", "cancellation_deadline", "terminationDeadline"),
+                amount(fields, existing.monthlyAmount(), "monthlyAmount", "monthly_amount", "subscriptionAmount"),
+                amount(fields, existing.penaltyAmount(), "penaltyAmount", "penalty_amount"),
+                text(fields, existing.cancellationTerms(), "cancellationTerms", "cancellation_terms", "terminationTerms"),
+                text(fields, existing.plainSummary(), "plainSummary", "plain_summary", "summary")
+        );
+        contracts.update(userId, contractId, request);
+    }
+
+    private String text(JsonNode fields, String fallback, String... names) {
+        for (String name : names) {
+            JsonNode value = fields.get(name);
+            if (value != null && !value.isNull() && !value.asText().isBlank()) return value.asText();
+        }
+        return fallback;
+    }
+
+    private LocalDate date(JsonNode fields, LocalDate fallback, String... names) {
+        String value = text(fields, null, names);
+        if (value == null) return fallback;
+        String normalized = value.trim().replace('.', '-').replace('/', '-');
+        if (normalized.matches("\\d{8}")) {
+            normalized = normalized.substring(0, 4) + "-" + normalized.substring(4, 6) + "-" + normalized.substring(6);
+        }
+        try { return LocalDate.parse(normalized.substring(0, Math.min(normalized.length(), 10))); }
+        catch (RuntimeException ignored) { return fallback; }
+    }
+
+    private BigDecimal amount(JsonNode fields, BigDecimal fallback, String... names) {
+        String value = text(fields, null, names);
+        if (value == null) return fallback;
+        String normalized = value.replace(",", "").replaceAll("[^0-9.-]", "");
+        if (normalized.isBlank() || normalized.equals("-")) return fallback;
+        try { return new BigDecimal(normalized); }
+        catch (NumberFormatException ignored) { return fallback; }
     }
 }
