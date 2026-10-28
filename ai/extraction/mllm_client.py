@@ -2,12 +2,28 @@
 import os
 import io
 import json
+from pathlib import Path
 
 from PIL import Image
 from google import genai
 from google.genai import types
+from dotenv import load_dotenv
 
 from extraction.schema import ContractExtraction
+
+
+# AI 서버 디렉터리의 .env를 우선 사용합니다.
+# 이 파일은 .gitignore에 포함되어 있어 API 키가 저장소에 올라가지 않습니다.
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+
+
+def gemini_api_key() -> str:
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise RuntimeError(
+            "GEMINI_API_KEY가 설정되지 않았습니다. ai/.env에 설정하세요."
+        )
+    return api_key
 
 
 PROMPT = """
@@ -52,7 +68,7 @@ def analyze_contract_images(images: list[Image.Image]) -> ContractExtraction:
         raise ValueError("분석할 계약서 이미지가 없습니다.")
 
     client = genai.Client(
-        api_key=os.environ["GEMINI_API_KEY"],
+        api_key=gemini_api_key(),
         http_options=types.HttpOptions(
             timeout=60000,  # 60초 (밀리초 단위)
             retry_options=types.HttpRetryOptions(attempts=1),
@@ -105,7 +121,7 @@ def analyze_contract_pdf(pdf_bytes: bytes) -> ContractExtraction:
         raise ValueError("분석할 PDF가 없습니다.")
 
     client = genai.Client(
-        api_key=os.environ["GEMINI_API_KEY"],
+        api_key=gemini_api_key(),
         http_options=types.HttpOptions(
             timeout=60000,
             retry_options=types.HttpRetryOptions(attempts=1),

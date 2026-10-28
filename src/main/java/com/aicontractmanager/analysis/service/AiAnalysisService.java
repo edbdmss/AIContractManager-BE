@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -19,6 +20,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.net.http.HttpClient;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -39,12 +41,20 @@ public class AiAnalysisService {
             RestClient.Builder restClientBuilder,
             @Value("${app.ai.enabled:true}") boolean enabled,
             @Value("${app.ai.base-url:http://localhost:8000}") String baseUrl,
-            @Value("${app.ai.analyze-path:/internal/analysis/contracts}") String analyzePath
+            @Value("${app.ai.analyze-path:/analyze}") String analyzePath
     ) {
         this.contracts = contracts;
         this.documents = documents;
         this.repository = repository;
-        this.restClient = restClientBuilder.baseUrl(baseUrl).build();
+        // Uvicorn does not accept the cleartext HTTP/2 upgrade request sent by
+        // the JDK client's default version for multipart uploads.
+        HttpClient httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .build();
+        this.restClient = restClientBuilder
+                .requestFactory(new JdkClientHttpRequestFactory(httpClient))
+                .baseUrl(baseUrl)
+                .build();
         this.enabled = enabled;
         this.analyzePath = analyzePath;
     }

@@ -18,6 +18,7 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+  address: ${SERVER_ADDRESS:0.0.0.0}
 
 app:
   document:
@@ -25,7 +26,7 @@ app:
   ai:
     enabled: ${AI_ENABLED:true}
     base-url: ${AI_BASE_URL:http://localhost:8000}
-    analyze-path: ${AI_ANALYZE_PATH:/internal/analysis/contracts}
+    analyze-path: ${AI_ANALYZE_PATH:/analyze}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,http://localhost:8081}
   jwt:

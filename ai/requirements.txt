@@ -4,3 +4,5 @@ uvicorn[standard]
 pymupdf
 python-multipart
 pillow
+google-genai
+python-dotenv
