@@ -1,5 +1,6 @@
 
 import json
+import os
 import time
 from pathlib import Path
 
@@ -14,6 +15,9 @@ app = FastAPI(
     description="개인정보 마스킹 후 Gemini로 계약서를 분석하는 API",
     version="1.0.0",
 )
+
+
+AI_ENV = os.getenv("AI_ENV", "development").lower()
 
 
 @app.get("/health")
@@ -55,17 +59,25 @@ async def analyze_contract(file: UploadFile = File(...)):
             flush=True
         )
 
-        # 2. 불명확한 항목이나 마스킹 실패 시 외부 전송 차단
+        # 2. 운영 환경에서는 마스킹 경고가 있으면 외부 전송을 차단한다.
+        # 개발 환경에서는 경고를 로그로 남기고, 시연 및 통합 테스트를 위해
+        # 마스킹된 PDF로 Gemini 분석을 계속 진행한다.
         if masking_result.warnings:
             for warning in masking_result.warnings:
                 print(f"마스킹 경고: {warning}", flush=True)
 
-            raise HTTPException(
-                status_code=422,
-                detail={
-                    "message": "개인정보 마스킹 검토가 필요합니다.",
-                    "warnings": masking_result.warnings,
-                },
+            if AI_ENV == "production":
+                raise HTTPException(
+                    status_code=422,
+                    detail={
+                        "message": "개인정보 마스킹 검토가 필요합니다.",
+                        "warnings": masking_result.warnings,
+                    },
+                )
+
+            print(
+                f"개발 환경({AI_ENV}): 마스킹 경고가 있지만 분석을 계속합니다.",
+                flush=True,
             )
 
         # 3. 마스킹된 PDF만 Gemini에 전달

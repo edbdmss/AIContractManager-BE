@@ -9,6 +9,9 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
+import java.net.http.HttpClient;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
+
 @Component
 public class NaverOAuthProviderClient implements OAuthProviderClient {
 
@@ -25,7 +28,10 @@ public class NaverOAuthProviderClient implements OAuthProviderClient {
             @Value("${app.oauth2.naver.token-uri}") String tokenUri,
             @Value("${app.oauth2.naver.user-info-uri}") String userInfoUri
     ) {
-        this.restClient = restClientBuilder.build();
+        this.restClient = restClientBuilder
+                .requestFactory(new JdkClientHttpRequestFactory(
+                        HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build()))
+                .build();
         this.clientId = clientId;
         this.clientSecret = clientSecret;
         this.tokenUri = tokenUri;
