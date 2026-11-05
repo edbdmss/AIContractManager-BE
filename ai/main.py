@@ -3,10 +3,14 @@ import json
 import os
 import time
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from pydantic import BaseModel, Field
+from google import genai
+from google.genai import types
 
-from extraction.mllm_client import analyze_contract_pdf
+from extraction.mllm_client import analyze_contract_pdf, gemini_api_key
 from masking.pdf_masker import mask_pdf
 
 
@@ -18,6 +22,12 @@ app = FastAPI(
 
 
 AI_ENV = os.getenv("AI_ENV", "development").lower()
+
+
+class ChatRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=4000)
+    history: list[dict[str, str]] = Field(default_factory=list, max_length=10)
+    contractContext: list[dict[str, Any]] = Field(default_factory=list, max_length=20)
 
 
 @app.get("/health")
@@ -131,3 +141,51 @@ async def analyze_contract(file: UploadFile = File(...)):
             status_code=502,
             detail="계약서 분석에 실패했습니다."
         )
+
+
+@app.post("/chat")
+def chat(request: ChatRequest):
+    context = json.dumps(request.contractContext, ensure_ascii=False)
+    prompt = f"""
+너는 생활 계약 관리 서비스의 한국어 안내 챗봇이다.
+사용자가 제공한 계약 정보와 대화 이력에 근거해 간결하고 실행 가능한 답변을 작성한다.
+
+규칙:
+- 계약 정보에 없는 금액, 날짜, 계약 조건은 추측하지 말고 정보가 없다고 말한다.
+- 해지 절차나 마감일은 제공된 계약 정보에 있는 내용만 사실로 안내한다.
+- 법률적 결론을 단정하지 않는다. 위험 여부는 확인이 필요한 가능성으로 설명하고 원문 조항을 함께 안내한다.
+- 실제 계약 해지나 변경을 대신 처리했다고 말하지 않는다.
+- 앱 사용법 질문에 근거가 없으면 모른다고 밝히고 필요한 상황을 물어본다.
+- 개인정보를 요구하거나 계약 정보에 없는 민감정보를 추론하지 않는다.
+- 답변은 한국어로 작성한다.
+
+사용자 보유 계약 정보(JSON):
+{context}
+"""
+    turns = []
+    for item in request.history:
+        role = "model" if item.get("role", "").upper() == "ASSISTANT" else "user"
+        content = item.get("content", "")
+        if content:
+            turns.append(types.Content(role=role, parts=[types.Part.from_text(text=content[:4000])]))
+    turns.append(types.Content(role="user", parts=[types.Part.from_text(text=request.question)]))
+
+    try:
+        client = genai.Client(
+            api_key=gemini_api_key(),
+            http_options=types.HttpOptions(
+                timeout=60000,
+                retry_options=types.HttpRetryOptions(attempts=1),
+            ),
+        )
+        response = client.models.generate_content(
+            model=os.getenv("GEMINI_CHAT_MODEL", "gemini-3.5-flash-lite"),
+            contents=turns,
+            config=types.GenerateContentConfig(system_instruction=prompt, temperature=0.2),
+        )
+        if not response.text:
+            raise ValueError("Gemini가 빈 챗봇 응답을 반환했습니다.")
+        return {"answer": response.text.strip()}
+    except Exception as e:
+        print(f"챗봇 응답 오류: {type(e).__name__}: {e}", flush=True)
+        raise HTTPException(status_code=502, detail="챗봇 응답을 생성하지 못했습니다.")
