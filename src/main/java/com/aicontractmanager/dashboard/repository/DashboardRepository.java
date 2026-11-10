@@ -66,16 +66,28 @@ public class DashboardRepository {
                     FROM contracts c
                     WHERE c.user_id = ? AND c.status = 'ACTIVE' AND c.deleted_at IS NULL
                       AND c.contract_end_date BETWEEN ? AND ?
+                      AND NOT EXISTS (SELECT 1 FROM contract_schedules managed_schedule
+                          WHERE managed_schedule.contract_id=c.id AND managed_schedule.managed=TRUE
+                            AND managed_schedule.schedule_type='EXPIRY'
+                            AND managed_schedule.due_date=c.contract_end_date)
                     UNION ALL
                     SELECT c.auto_renewal_date, 'RENEWAL', c.id, c.title, '자동 갱신 예정', NULL
                     FROM contracts c
                     WHERE c.user_id = ? AND c.status = 'ACTIVE' AND c.deleted_at IS NULL
                       AND c.auto_renewal_date BETWEEN ? AND ?
+                      AND NOT EXISTS (SELECT 1 FROM contract_schedules managed_schedule
+                          WHERE managed_schedule.contract_id=c.id AND managed_schedule.managed=TRUE
+                            AND managed_schedule.schedule_type='RENEWAL'
+                            AND managed_schedule.due_date=c.auto_renewal_date)
                     UNION ALL
                     SELECT c.cancellation_deadline, 'CANCELLATION', c.id, c.title, '해지 신청 마감', NULL
                     FROM contracts c
                     WHERE c.user_id = ? AND c.status = 'ACTIVE' AND c.deleted_at IS NULL
                       AND c.cancellation_deadline BETWEEN ? AND ?
+                      AND NOT EXISTS (SELECT 1 FROM contract_schedules managed_schedule
+                          WHERE managed_schedule.contract_id=c.id AND managed_schedule.managed=TRUE
+                            AND managed_schedule.schedule_type='CANCELLATION'
+                            AND managed_schedule.due_date=c.cancellation_deadline)
                 ) events
                 ORDER BY event_date, title
                 """, (rs, row) -> new CalendarEvent(rs.getObject("event_date", LocalDate.class),

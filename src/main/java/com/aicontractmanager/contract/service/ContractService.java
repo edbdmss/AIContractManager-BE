@@ -63,6 +63,13 @@ public class ContractService {
         repository.delete(id, userId);
     }
 
+    @Transactional
+    public Contract cancel(UUID userId, UUID id) {
+        get(userId, id);
+        repository.cancel(id, userId);
+        return get(userId, id);
+    }
+
     private void validateDates(ContractRequest request) {
         if (request.contractStartDate() != null && request.contractEndDate() != null
                 && request.contractEndDate().isBefore(request.contractStartDate())) {
