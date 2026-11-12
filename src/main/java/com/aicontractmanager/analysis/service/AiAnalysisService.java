@@ -120,7 +120,7 @@ public class AiAnalysisService {
                 text(fields, existing.providerName(), "providerName", "provider_name", "lessor", "merchantName"),
                 date(fields, existing.contractStartDate(), "contractStartDate", "contract_start_date", "startDate"),
                 date(fields, existing.contractEndDate(), "contractEndDate", "contract_end_date", "endDate", "expiryDate"),
-                date(fields, existing.autoRenewalDate(), "autoRenewalDate", "auto_renewal_date", "renewalDate"),
+                date(fields, existing.nextPaymentDate(), "nextPaymentDate", "autoRenewalDate", "auto_renewal_date", "renewalDate"),
                 date(fields, existing.cancellationDeadline(), "cancellationDeadline", "cancellation_deadline", "terminationDeadline"),
                 amount(fields, existing.monthlyAmount(), "monthlyAmount", "monthly_amount", "subscriptionAmount"),
                 amount(fields, existing.penaltyAmount(), "penaltyAmount", "penalty_amount"),

@@ -10,6 +10,7 @@ import com.aicontractmanager.notification.domain.PushNotification;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import com.aicontractmanager.common.ApiTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -38,7 +39,7 @@ public class NotificationRepository {
                 SELECT id, contract_id, schedule_id, suggestion_id, notification_type, title, body,
                        scheduled_at, sent_at, read_at, created_at
                 FROM notifications WHERE user_id = ? AND scheduled_at <= CURRENT_TIMESTAMP
-                  AND dispatch_status <> 'CANCELLED'
+                  AND dispatch_status <> 'CANCELLED' AND dismissed_at IS NULL
                 """ + (unreadOnly ? " AND read_at IS NULL" : "") + " ORDER BY created_at DESC";
         return jdbc.query(sql, mapper, userId.toString());
     }
@@ -48,6 +49,7 @@ public class NotificationRepository {
                 SELECT id, contract_id, schedule_id, suggestion_id, notification_type, title, body,
                        scheduled_at, sent_at, read_at, created_at
                 FROM notifications WHERE id = ? AND user_id = ?
+                  AND dismissed_at IS NULL
                 """, mapper, notificationId.toString(), userId.toString()).stream().findFirst();
     }
 
@@ -55,7 +57,7 @@ public class NotificationRepository {
         return jdbc.update("""
                 UPDATE notifications SET read_at = CURRENT_TIMESTAMP
                 WHERE id = ? AND user_id = ? AND read_at IS NULL
-                  AND scheduled_at <= CURRENT_TIMESTAMP AND dispatch_status <> 'CANCELLED'
+                  AND scheduled_at <= CURRENT_TIMESTAMP AND dispatch_status <> 'CANCELLED' AND dismissed_at IS NULL
                 """, notificationId.toString(), userId.toString());
     }
 
@@ -63,8 +65,18 @@ public class NotificationRepository {
         return jdbc.update("""
                 UPDATE notifications SET read_at = CURRENT_TIMESTAMP
                 WHERE user_id = ? AND read_at IS NULL AND scheduled_at <= CURRENT_TIMESTAMP
-                  AND dispatch_status <> 'CANCELLED'
+                  AND dispatch_status <> 'CANCELLED' AND dismissed_at IS NULL
                 """,
+                userId.toString());
+    }
+
+    public int dismiss(UUID notificationId, UUID userId) {
+        return jdbc.update("UPDATE notifications SET dismissed_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ? AND dismissed_at IS NULL",
+                notificationId.toString(), userId.toString());
+    }
+
+    public int dismissAll(UUID userId) {
+        return jdbc.update("UPDATE notifications SET dismissed_at = CURRENT_TIMESTAMP WHERE user_id = ? AND dismissed_at IS NULL AND scheduled_at <= CURRENT_TIMESTAMP AND dispatch_status <> 'CANCELLED'",
                 userId.toString());
     }
 
@@ -89,6 +101,8 @@ public class NotificationRepository {
                   AND scheduled_at <= CURRENT_TIMESTAMP
                   AND (dispatch_next_attempt_at IS NULL OR dispatch_next_attempt_at <= CURRENT_TIMESTAMP)
                   AND dispatch_attempts < 5
+                  AND COALESCE((SELECT p.enabled FROM user_notification_preferences p
+                                WHERE p.user_id = notifications.user_id), TRUE) = TRUE
                 ORDER BY scheduled_at
                 LIMIT ? FOR UPDATE SKIP LOCKED
                 """, (rs, row) -> new PushNotification(UUID.fromString(rs.getString("id")),
@@ -139,9 +153,9 @@ public class NotificationRepository {
     private Notification map(ResultSet rs, int rowNum) throws SQLException {
         return new Notification(UUID.fromString(rs.getString("id")), uuid(rs, "contract_id"),
                 uuid(rs, "schedule_id"), uuid(rs, "suggestion_id"), rs.getString("notification_type"),
-                rs.getString("title"), rs.getString("body"), rs.getObject("scheduled_at", LocalDateTime.class),
-                rs.getObject("sent_at", LocalDateTime.class), rs.getObject("read_at", LocalDateTime.class),
-                rs.getObject("created_at", LocalDateTime.class));
+                rs.getString("title"), rs.getString("body"), ApiTime.fromDatabase(rs.getObject("scheduled_at", LocalDateTime.class)),
+                ApiTime.fromDatabase(rs.getObject("sent_at", LocalDateTime.class)), ApiTime.fromDatabase(rs.getObject("read_at", LocalDateTime.class)),
+                ApiTime.fromDatabase(rs.getObject("created_at", LocalDateTime.class)));
     }
 
     private UUID uuid(ResultSet rs, String column) throws SQLException {

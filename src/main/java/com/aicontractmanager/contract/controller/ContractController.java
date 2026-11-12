@@ -39,7 +39,7 @@ public class ContractController {
             case "amount" -> result.stream().sorted(java.util.Comparator.comparing(Contract::monthlyAmount,
                     java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder()))).toList();
             case "deadline" -> result.stream().sorted(java.util.Comparator.comparing(
-                    c -> java.util.stream.Stream.of(c.cancellationDeadline(), c.autoRenewalDate(), c.contractEndDate())
+                    c -> java.util.stream.Stream.of(c.cancellationDeadline(), c.nextPaymentDate(), c.contractEndDate())
                             .filter(java.util.Objects::nonNull).min(java.time.LocalDate::compareTo).orElse(null),
                     java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()))).toList();
             default -> throw new org.springframework.web.server.ResponseStatusException(HttpStatus.BAD_REQUEST,"지원하지 않는 정렬입니다.");

@@ -2,7 +2,7 @@
 
 ## Android payment detection
 POST /api/aicontract/payment-detections (Bearer token required).
-Body: eventId (stable notification identifier, max 100), merchantName, amount, paidAt (Korean local date-time), sourcePackage, parserVersion (optional).
+Body: eventId (stable notification identifier, max 100), merchantName, amount, paidDate (`YYYY-MM-DD`), sourcePackage, parserVersion (optional).
 Only confirmed purchases should be sent by the Android parser; raw notifications are not stored. Cancellation/refund notifications must be filtered by the client.
 Returns detectionId, suggestionId (nullable), duplicate. Reusing eventId for the same user does not create another transaction. The first persisted payload wins.
 Two equal-amount payments at the same merchant 25–35 days apart create a MONTHLY suggestion and notification. This is a heuristic requiring user confirmation. Other cycles are not inferred yet.

@@ -4,6 +4,9 @@ import com.aicontractmanager.notification.domain.Notification;
 import com.aicontractmanager.notification.dto.DeviceTokenRequest;
 import com.aicontractmanager.notification.service.DeviceTokenService;
 import com.aicontractmanager.notification.service.NotificationService;
+import com.aicontractmanager.notification.repository.NotificationPreferenceRepository;
+import com.aicontractmanager.notification.domain.NotificationPreference;
+import com.aicontractmanager.notification.dto.NotificationPreferenceRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,10 +29,13 @@ import java.util.UUID;
 public class NotificationController {
     private final NotificationService service;
     private final DeviceTokenService deviceTokenService;
+    private final NotificationPreferenceRepository preferenceRepository;
 
-    public NotificationController(NotificationService service, DeviceTokenService deviceTokenService) {
+    public NotificationController(NotificationService service, DeviceTokenService deviceTokenService,
+                                   NotificationPreferenceRepository preferenceRepository) {
         this.service = service;
         this.deviceTokenService = deviceTokenService;
+        this.preferenceRepository = preferenceRepository;
     }
 
     @GetMapping
@@ -49,6 +55,17 @@ public class NotificationController {
         service.markAllRead(userId(principal));
     }
 
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void dismiss(Principal principal, @PathVariable UUID id) {
+        service.dismiss(userId(principal), id);
+    }
+
+    @PostMapping("/dismiss-all")
+    public java.util.Map<String, Integer> dismissAll(Principal principal) {
+        return java.util.Map.of("dismissedCount", service.dismissAll(userId(principal)));
+    }
+
     @PostMapping("/devices")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void registerDevice(Principal principal, @Valid @RequestBody DeviceTokenRequest request) {
@@ -59,6 +76,17 @@ public class NotificationController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void unregisterDevice(Principal principal, @RequestParam String token) {
         deviceTokenService.unregister(userId(principal), token);
+    }
+
+    @GetMapping("/preferences")
+    public NotificationPreference getPreferences(Principal principal) {
+        return preferenceRepository.get(userId(principal));
+    }
+
+    @org.springframework.web.bind.annotation.PutMapping("/preferences")
+    public NotificationPreference updatePreferences(Principal principal,
+            @Valid @RequestBody NotificationPreferenceRequest request) {
+        return preferenceRepository.update(userId(principal), request.enabled());
     }
 
     private UUID userId(Principal principal) {

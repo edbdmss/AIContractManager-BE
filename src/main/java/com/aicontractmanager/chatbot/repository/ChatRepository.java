@@ -2,6 +2,7 @@ package com.aicontractmanager.chatbot.repository;
 
 import com.aicontractmanager.chatbot.domain.ChatMessage;
 import com.aicontractmanager.chatbot.domain.ChatSession;
+import com.aicontractmanager.common.ApiTime;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -73,11 +74,11 @@ public class ChatRepository {
         String contractId = rs.getString("contract_id");
         return new ChatSession(UUID.fromString(rs.getString("id")),
                 contractId == null ? null : UUID.fromString(contractId),
-                rs.getObject("created_at", LocalDateTime.class), rs.getObject("closed_at", LocalDateTime.class));
+                ApiTime.fromDatabase(rs.getObject("created_at", LocalDateTime.class)), ApiTime.fromDatabase(rs.getObject("closed_at", LocalDateTime.class)));
     }
 
     private ChatMessage mapMessage(ResultSet rs) throws SQLException {
         return new ChatMessage(UUID.fromString(rs.getString("id")), rs.getString("role"),
-                rs.getString("content"), rs.getObject("created_at", LocalDateTime.class));
+                rs.getString("content"), ApiTime.fromDatabase(rs.getObject("created_at", LocalDateTime.class)));
     }
 }

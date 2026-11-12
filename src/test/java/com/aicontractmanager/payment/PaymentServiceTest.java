@@ -1,6 +1,6 @@
 package com.aicontractmanager.payment;
 import org.junit.jupiter.api.Test;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.*;
 class PaymentServiceTest {
  @Test void retryDoesNotInsertPaymentOrSuggestion() {
@@ -11,7 +11,7 @@ class PaymentServiceTest {
     .thenReturn(java.util.List.of(user.toString()));
   org.mockito.Mockito.when(jdbc.queryForList("SELECT id FROM payment_detection_events WHERE user_id=? AND client_event_id=?",String.class,user.toString(),"event-1"))
     .thenReturn(java.util.List.of(detection.toString()));
-  var result=new PaymentService(jdbc).receive(user,new PaymentRequest("event-1","헬스장",new java.math.BigDecimal("30000"),LocalDateTime.now().minusDays(1),"test.bank",null));
+  var result=new PaymentService(jdbc).receive(user,new PaymentRequest("event-1","헬스장",new java.math.BigDecimal("30000"),LocalDate.now().minusDays(1),"test.bank",null));
   assertTrue(result.duplicate());
   assertEquals(detection,result.detectionId());
   org.mockito.Mockito.verify(jdbc).queryForList("SELECT id FROM users WHERE id=? AND deleted_at IS NULL FOR UPDATE",String.class,user.toString());
@@ -19,10 +19,10 @@ class PaymentServiceTest {
   org.mockito.Mockito.verifyNoMoreInteractions(jdbc);
  }
  @Test void monthlyIntervalIncludesFebruaryAndExcludesDuplicateDay() {
-  var start=LocalDateTime.of(2026,2,1,12,0);
+  var start=LocalDate.of(2026,2,1);
   assertTrue(PaymentService.monthly(start,start.plusDays(28)));
   assertTrue(PaymentService.monthly(start,start.plusDays(31)));
-  assertFalse(PaymentService.monthly(start,start.plusHours(1)));
+  assertFalse(PaymentService.monthly(start,start));
   assertFalse(PaymentService.monthly(start,start.plusDays(7)));
   assertFalse(PaymentService.monthly(start,start.plusDays(36)));
  }
