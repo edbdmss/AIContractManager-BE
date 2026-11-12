@@ -4,7 +4,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.UUID;
 @RestController
-@RequestMapping("/api/v1/payment-detections")
+@RequestMapping("/api/aicontract/payment-detections")
 public class PaymentController {
  private final PaymentService service;
  public PaymentController(PaymentService service) {this.service=service;}

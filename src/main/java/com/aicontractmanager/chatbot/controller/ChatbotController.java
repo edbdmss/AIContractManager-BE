@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/chat/sessions")
+@RequestMapping("/api/aicontract/chat/sessions")
 public class ChatbotController {
     private final ChatbotService service;
 

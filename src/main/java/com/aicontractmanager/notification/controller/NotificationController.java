@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/notifications")
+@RequestMapping("/api/aicontract/notifications")
 public class NotificationController {
     private final NotificationService service;
     private final DeviceTokenService deviceTokenService;

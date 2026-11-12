@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/subscription-suggestions")
+@RequestMapping("/api/aicontract/subscription-suggestions")
 public class ContractSuggestionController {
     private final ContractSuggestionService service;
 

@@ -3,6 +3,10 @@ package com.aicontractmanager.auth.controller;
 import com.aicontractmanager.auth.dto.OAuthLoginRequest;
 import com.aicontractmanager.auth.dto.OAuthLoginResponse;
 import com.aicontractmanager.auth.dto.OAuthProvider;
+import com.aicontractmanager.auth.dto.TokenRefreshRequest;
+import com.aicontractmanager.auth.dto.TokenRefreshResponse;
+import com.aicontractmanager.auth.dto.LogoutRequest;
+import com.aicontractmanager.auth.service.RefreshTokenService;
 import com.aicontractmanager.auth.dto.OAuthAuthorizeResponse;
 import com.aicontractmanager.auth.service.AuthService;
 import com.aicontractmanager.auth.service.OAuthStateStore;
@@ -21,22 +25,25 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/api/aicontract/auth")
 public class AuthController {
 
     private final AuthService authService;
     private final OAuthStateStore stateStore;
+    private final RefreshTokenService refreshTokenService;
     private final String kakaoClientId;
     private final String naverClientId;
 
     public AuthController(
             AuthService authService,
             OAuthStateStore stateStore,
+            RefreshTokenService refreshTokenService,
             @Value("${app.oauth2.kakao.client-id}") String kakaoClientId,
             @Value("${app.oauth2.naver.client-id}") String naverClientId
     ) {
         this.authService = authService;
         this.stateStore = stateStore;
+        this.refreshTokenService = refreshTokenService;
         this.kakaoClientId = kakaoClientId;
         this.naverClientId = naverClientId;
     }
@@ -77,6 +84,17 @@ public class AuthController {
                 request.redirectUri(),
                 request.state()
         );
+    }
+
+    @PostMapping("/refresh")
+    public TokenRefreshResponse refresh(@Valid @RequestBody TokenRefreshRequest request) {
+        return refreshTokenService.rotate(request.refreshToken());
+    }
+
+    @PostMapping("/logout")
+    @org.springframework.web.bind.annotation.ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(@Valid @RequestBody LogoutRequest request) {
+        refreshTokenService.revoke(request.refreshToken());
     }
 
     private OAuthProvider parseProvider(String provider) {

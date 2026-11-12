@@ -4,12 +4,12 @@ All endpoints require `Authorization: Bearer <access-token>`. Contract ownership
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| GET | `/api/v1/contracts` | List my non-deleted contracts |
-| GET | `/api/v1/contracts/{id}` | Read one of my contracts |
-| POST | `/api/v1/contracts` | Create a manual contract (201) |
-| PUT | `/api/v1/contracts/{id}` | Replace editable fields |
-| POST | `/api/v1/contracts/{id}/verify-amount` | Confirm the saved monthly amount |
-| DELETE | `/api/v1/contracts/{id}` | Soft-delete a contract (204) |
+| GET | `/api/aicontract/contracts` | List my non-deleted contracts |
+| GET | `/api/aicontract/contracts/{id}` | Read one of my contracts |
+| POST | `/api/aicontract/contracts` | Create a manual contract (201) |
+| PUT | `/api/aicontract/contracts/{id}` | Replace editable fields |
+| POST | `/api/aicontract/contracts/{id}/verify-amount` | Confirm the saved monthly amount |
+| DELETE | `/api/aicontract/contracts/{id}` | Soft-delete a contract (204) |
 
 Create and PUT use the same body. `title` and `category` are required. Optional fields are `providerName`, `contractStartDate`, `contractEndDate`, `autoRenewalDate`, `cancellationDeadline`, `monthlyAmount`, `penaltyAmount`, `cancellationTerms`, and `plainSummary`. Dates use `YYYY-MM-DD`; amounts are nonnegative decimal values. PUT replaces all editable fields, so omitted optional fields become `null`.
 

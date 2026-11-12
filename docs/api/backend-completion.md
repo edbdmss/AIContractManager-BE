@@ -1,7 +1,7 @@
 # Backend completion
 
 ## Android payment detection
-POST /api/v1/payment-detections (Bearer token required).
+POST /api/aicontract/payment-detections (Bearer token required).
 Body: eventId (stable notification identifier, max 100), merchantName, amount, paidAt (Korean local date-time), sourcePackage, parserVersion (optional).
 Only confirmed purchases should be sent by the Android parser; raw notifications are not stored. Cancellation/refund notifications must be filtered by the client.
 Returns detectionId, suggestionId (nullable), duplicate. Reusing eventId for the same user does not create another transaction. The first persisted payload wins.
@@ -9,8 +9,8 @@ Two equal-amount payments at the same merchant 25–35 days apart create a MONTH
 Previously accepted/rejected/ignored suggestions are not automatically recreated. The existing suggestion acceptance flow leads to subscription registration.
 
 ## Contracts
-GET /api/v1/contracts?sort=created|amount|deadline. Default created. Amount descending, earliest deadline ascending, nulls last.
-POST /api/v1/contracts/{id}/cancel marks a contract CANCELLED without deleting its history. This only records cancellation in this service and does not cancel the vendor subscription.
+GET /api/aicontract/contracts?sort=created|amount|deadline. Default created. Amount descending, earliest deadline ascending, nulls last.
+POST /api/aicontract/contracts/{id}/cancel marks a contract CANCELLED without deleting its history. This only records cancellation in this service and does not cancel the vendor subscription.
 Cancellation and deletion dismiss pending schedules and cancel queued notifications. Already delivered pushes cannot be recalled.
 Creating/updating contract dates synchronizes automatically managed EXPIRY, RENEWAL and CANCELLATION reminders 3 days before at 09:00 (server local timezone, configure Asia/Seoul). Manual schedules are preserved. Unchanged dates do not recreate completed reminders.
 

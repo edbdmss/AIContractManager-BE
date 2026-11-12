@@ -4,7 +4,7 @@
 
 ## 대시보드
 
-`GET /api/v1/dashboard?month=2026-11`
+`GET /api/aicontract/dashboard?month=2026-11`
 
 `month`는 `yyyy-MM` 형식이며 생략하면 이번 달을 사용합니다. 응답에 캘린더 일정, 오늘부터 3일 이내에 만료되는 활성 계약, 현재 활성 계약의 월 지출 합계와 카테고리별 지출 비율이 포함됩니다.
 
@@ -27,7 +27,7 @@
 
 ### 대화 세션 생성
 
-`POST /api/v1/chat/sessions`
+`POST /api/aicontract/chat/sessions`
 
 일반 이용 문의는 본문을 생략하거나 `{}`를 전달합니다. 계약 관련 질문을 특정 계약으로 제한할 때는 계약 ID를 전달합니다.
 
@@ -37,12 +37,12 @@
 
 ### 대화 세션 목록과 메시지
 
-- `GET /api/v1/chat/sessions`
-- `GET /api/v1/chat/sessions/{sessionId}/messages`
+- `GET /api/aicontract/chat/sessions`
+- `GET /api/aicontract/chat/sessions/{sessionId}/messages`
 
 ### 질문 전송
 
-`POST /api/v1/chat/sessions/{sessionId}/messages`
+`POST /api/aicontract/chat/sessions/{sessionId}/messages`
 
 ```json
 { "message": "이 계약 해지 신청 마감일이 언제야?" }

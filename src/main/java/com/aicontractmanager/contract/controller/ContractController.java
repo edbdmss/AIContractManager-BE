@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/contracts")
+@RequestMapping("/api/aicontract/contracts")
 public class ContractController {
 
     private final ContractService service;

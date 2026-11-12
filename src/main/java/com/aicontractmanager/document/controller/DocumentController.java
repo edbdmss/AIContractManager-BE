@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/contracts/{contractId}/documents")
+@RequestMapping("/api/aicontract/contracts/{contractId}/documents")
 public class DocumentController {
 
     private final DocumentService service;
