@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.UUID;
 import java.util.Date;
 
 @Component
@@ -36,6 +37,17 @@ public class JwtTokenProvider {
                 .subject(user.id().toString())
                 .claim("email", user.email())
                 .claim("provider", user.provider().name())
+                .issuedAt(now)
+                .expiration(expiresAt)
+                .signWith(signingKey)
+                .compact();
+    }
+
+    public String issueForUserId(UUID userId) {
+        Date now = new Date();
+        Date expiresAt = new Date(now.getTime() + expiration.toMillis());
+        return Jwts.builder()
+                .subject(userId.toString())
                 .issuedAt(now)
                 .expiration(expiresAt)
                 .signWith(signingKey)

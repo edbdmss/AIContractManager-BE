@@ -4,11 +4,11 @@ All endpoints require `Authorization: Bearer <access-token>`. The contract must 
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| GET | `/api/v1/contracts/{contractId}/documents` | List document metadata |
-| GET | `/api/v1/contracts/{contractId}/documents/{id}` | Read document metadata |
-| POST | `/api/v1/contracts/{contractId}/documents` | Upload a multipart `file` (201) |
-| GET | `/api/v1/contracts/{contractId}/documents/{id}/download` | Download the original file as an attachment |
-| DELETE | `/api/v1/contracts/{contractId}/documents/{id}` | Soft-delete metadata (204) |
+| GET | `/api/aicontract/contracts/{contractId}/documents` | List document metadata |
+| GET | `/api/aicontract/contracts/{contractId}/documents/{id}` | Read document metadata |
+| POST | `/api/aicontract/contracts/{contractId}/documents` | Upload a multipart `file` (201) |
+| GET | `/api/aicontract/contracts/{contractId}/documents/{id}/download` | Download the original file as an attachment |
+| DELETE | `/api/aicontract/contracts/{contractId}/documents/{id}` | Soft-delete metadata (204) |
 
 Supported files: PDF, HWP, HWPX, DOCX, JPG/JPEG, PNG. Google Docs should be exported to PDF or DOCX before upload. Maximum size is 20 MB. The server checks the filename extension and initial file signature, stores the bytes under a random key, and returns metadata without exposing the storage path.
 

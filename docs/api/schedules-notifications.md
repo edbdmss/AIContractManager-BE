@@ -6,13 +6,13 @@
 
 ### 계약 일정 목록
 
-`GET /api/v1/contracts/{contractId}/schedules`
+`GET /api/aicontract/contracts/{contractId}/schedules`
 
 로그인 사용자가 소유한 계약의 일정을 dueDate 오름차순으로 반환합니다.
 
 ### 일정 등록
 
-`POST /api/v1/contracts/{contractId}/schedules`
+`POST /api/aicontract/contracts/{contractId}/schedules`
 
 ```json
 {
@@ -28,14 +28,14 @@
 
 ### 전체 예정 일정
 
-`GET /api/v1/schedules/upcoming`
+`GET /api/aicontract/schedules/upcoming`
 
 로그인 사용자가 소유한 계약 중 아직 처리되지 않았고 오늘 이후인 일정을 반환합니다.
 
 ### 일정 완료 또는 숨김
 
-- `POST /api/v1/schedules/{scheduleId}/complete`
-- `POST /api/v1/schedules/{scheduleId}/dismiss`
+- `POST /api/aicontract/schedules/{scheduleId}/complete`
+- `POST /api/aicontract/schedules/{scheduleId}/dismiss`
 
 완료는 `COMPLETED`, 숨김은 `DISMISSED` 상태로 변경합니다. 이미 처리한 일정은 `409 Conflict`를 반환합니다.
 
@@ -43,14 +43,14 @@
 
 ### 알림 목록
 
-`GET /api/v1/notifications?unreadOnly=true`
+`GET /api/aicontract/notifications?unreadOnly=true`
 
 `unreadOnly`는 생략하거나 `false`로 설정하면 현재 시각까지 도달한 전체 알림, `true`이면 읽지 않은 알림만 반환합니다.
 
 ### 알림 읽음 처리
 
-- `PATCH /api/v1/notifications/{notificationId}/read`
-- `POST /api/v1/notifications/read-all`
+- `PATCH /api/aicontract/notifications/{notificationId}/read`
+- `POST /api/aicontract/notifications/read-all`
 
 일정 알림의 생성·조회·읽음 처리와 FCM 푸시 발송을 지원합니다.
 
@@ -58,7 +58,7 @@
 
 앱 로그인 후 FCM 토큰을 등록합니다. 사용자가 로그아웃하거나 알림 수신을 끄면 해당 토큰을 해제합니다.
 
-`POST /api/v1/notifications/devices`
+`POST /api/aicontract/notifications/devices`
 
 ```json
 {
@@ -68,7 +68,7 @@
 }
 ```
 
-`platform`은 `ANDROID` 또는 `IOS`입니다. 해제는 `DELETE /api/v1/notifications/devices?token=FCM_DEVICE_TOKEN`을 호출합니다.
+`platform`은 `ANDROID` 또는 `IOS`입니다. 해제는 `DELETE /api/aicontract/notifications/devices?token=FCM_DEVICE_TOKEN`을 호출합니다.
 
 ### 예약 발송 동작
 

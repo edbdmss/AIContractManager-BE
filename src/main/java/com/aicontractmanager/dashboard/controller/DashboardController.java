@@ -13,7 +13,7 @@ import java.time.YearMonth;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/dashboard")
+@RequestMapping("/api/aicontract/dashboard")
 public class DashboardController {
     private final DashboardService service;
 

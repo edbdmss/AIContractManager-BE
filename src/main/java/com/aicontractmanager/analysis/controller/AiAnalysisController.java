@@ -14,7 +14,7 @@ import java.security.Principal;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/contracts/{contractId}/documents/{documentId}/analysis")
+@RequestMapping("/api/aicontract/contracts/{contractId}/documents/{documentId}/analysis")
 public class AiAnalysisController {
 
     private final AiAnalysisService service;
