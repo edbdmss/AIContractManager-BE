@@ -35,12 +35,13 @@ public class ContractRepository {
 
     public void create(UUID id, UUID userId, ContractRequest request) {
         jdbc.update("""
-                INSERT INTO contracts (id, user_id, title, category, provider_name, status, source_type,
+                INSERT INTO contracts (id, user_id, title, category, provider_name, status, source_type, amount_verified,
                     contract_start_date, contract_end_date, auto_renewal_date, cancellation_deadline,
                     monthly_amount, penalty_amount, cancellation_terms, plain_summary)
-                VALUES (?, ?, ?, ?, ?, 'PENDING_VERIFICATION', 'MANUAL', ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, CASE WHEN ? THEN 'ACTIVE' ELSE 'PENDING_VERIFICATION' END,
+                    'MANUAL', ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, id.toString(), userId.toString(), request.title(), request.category(), request.providerName(),
-                request.contractStartDate(), request.contractEndDate(), request.autoRenewalDate(),
+                isSubscription(request), isSubscription(request), request.contractStartDate(), request.contractEndDate(), request.nextPaymentDate(),
                 request.cancellationDeadline(), request.monthlyAmount(), request.penaltyAmount(),
                 request.cancellationTerms(), request.plainSummary());
         syncSchedules(id, userId);
@@ -51,13 +52,14 @@ public class ContractRepository {
                 UPDATE contracts SET title = ?, category = ?, provider_name = ?, contract_start_date = ?,
                     contract_end_date = ?, auto_renewal_date = ?, cancellation_deadline = ?, monthly_amount = ?,
                     penalty_amount = ?, cancellation_terms = ?, plain_summary = ?,
-                    amount_verified = CASE WHEN ? THEN FALSE ELSE amount_verified END,
-                    status = CASE WHEN status IN ('CANCELLED','EXPIRED') THEN status WHEN ? THEN 'PENDING_VERIFICATION' ELSE status END
+                    amount_verified = CASE WHEN ? THEN TRUE WHEN ? THEN FALSE ELSE amount_verified END,
+                    status = CASE WHEN status IN ('CANCELLED','EXPIRED') THEN status WHEN ? THEN 'ACTIVE' WHEN ? THEN 'PENDING_VERIFICATION' ELSE status END
                 WHERE id = ? AND user_id = ? AND deleted_at IS NULL
                 """, request.title(), request.category(), request.providerName(), request.contractStartDate(),
-                request.contractEndDate(), request.autoRenewalDate(), request.cancellationDeadline(),
+                request.contractEndDate(), request.nextPaymentDate(), request.cancellationDeadline(),
                 request.monthlyAmount(), request.penaltyAmount(), request.cancellationTerms(), request.plainSummary(),
-                resetAmountVerification, resetAmountVerification, id.toString(), userId.toString());
+                isSubscription(request), resetAmountVerification, isSubscription(request), resetAmountVerification,
+                id.toString(), userId.toString());
         syncSchedules(id, userId);
     }
 
@@ -89,7 +91,11 @@ public class ContractRepository {
         Contract contract = findOwned(id, userId).orElseThrow();
         if (java.util.Set.of("CANCELLED", "EXPIRED").contains(contract.status())) return;
         syncSchedule(id, userId, "EXPIRY", contract.contractEndDate(), "계약 만료 예정");
-        syncSchedule(id, userId, "RENEWAL", contract.autoRenewalDate(), "계약 자동 갱신 예정");
+        boolean subscription = "SUBSCRIPTION".equalsIgnoreCase(contract.category());
+        syncSchedule(id, userId, "RENEWAL", subscription ? null : contract.nextPaymentDate(),
+                "계약 자동 갱신 예정");
+        syncSchedule(id, userId, "PAYMENT", subscription ? contract.nextPaymentDate() : null,
+                "구독 결제 예정");
         syncSchedule(id, userId, "CANCELLATION", contract.cancellationDeadline(), "계약 해지 신청 마감");
     }
 
@@ -110,6 +116,10 @@ public class ContractRepository {
         jdbc.update("INSERT INTO notifications(id,user_id,contract_id,schedule_id,notification_type,title,body,scheduled_at) VALUES(?,?,?,?,'SCHEDULE_REMINDER',?,?,?)",
                 UUID.randomUUID().toString(),userId.toString(),contractId.toString(),scheduleId,title,
                 date + "까지 계약 내용을 확인해 주세요.",date.minusDays(3).atTime(9,0));
+    }
+
+    private boolean isSubscription(ContractRequest request) {
+        return "SUBSCRIPTION".equalsIgnoreCase(request.category());
     }
 
     private Contract map(ResultSet rs, int rowNum) throws SQLException {

@@ -1,6 +1,7 @@
 package com.aicontractmanager.suggestion.repository;
 
 import com.aicontractmanager.suggestion.domain.ContractSuggestion;
+import com.aicontractmanager.common.ApiTime;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
@@ -56,6 +57,6 @@ public class ContractSuggestionRepository {
         return new ContractSuggestion(UUID.fromString(rs.getString("id")), rs.getString("merchant_name"),
                 rs.getString("category"), rs.getBigDecimal("estimated_amount"), rs.getString("estimated_cycle"),
                 rs.getInt("detection_count"), rs.getString("status"),
-                rs.getObject("created_at", LocalDateTime.class));
+                ApiTime.fromDatabase(rs.getObject("created_at", LocalDateTime.class)));
     }
 }

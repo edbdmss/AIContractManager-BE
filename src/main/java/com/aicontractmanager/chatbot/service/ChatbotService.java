@@ -98,7 +98,7 @@ public class ChatbotService {
     private ChatAiRequest.ContractContext toContext(Contract contract) {
         return new ChatAiRequest.ContractContext(contract.id().toString(), contract.title(), contract.category(),
                 contract.providerName(), contract.status(), string(contract.contractEndDate()),
-                string(contract.autoRenewalDate()), string(contract.cancellationDeadline()),
+                string(contract.nextPaymentDate()), string(contract.cancellationDeadline()),
                 contract.monthlyAmount() == null ? null : contract.monthlyAmount().toPlainString(),
                 truncate(contract.cancellationTerms(), 2500), truncate(contract.plainSummary(), 1000));
     }

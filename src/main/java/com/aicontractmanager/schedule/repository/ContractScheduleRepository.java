@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import com.aicontractmanager.common.ApiTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -69,8 +70,8 @@ public class ContractScheduleRepository {
         return new ContractSchedule(UUID.fromString(rs.getString("id")), UUID.fromString(rs.getString("contract_id")),
                 rs.getString("schedule_type"), rs.getObject("due_date", java.time.LocalDate.class),
                 rs.getString("action_title"), rs.getString("action_description"), rs.getInt("reminder_days_before"),
-                rs.getString("status"), rs.getObject("completed_at", LocalDateTime.class),
-                rs.getObject("created_at", LocalDateTime.class));
+                rs.getString("status"), ApiTime.fromDatabase(rs.getObject("completed_at", LocalDateTime.class)),
+                ApiTime.fromDatabase(rs.getObject("created_at", LocalDateTime.class)));
     }
 
     public record ContractScheduleRequestData(String type, java.time.LocalDate dueDate, String title,

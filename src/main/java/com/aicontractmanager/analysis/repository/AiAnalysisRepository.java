@@ -1,6 +1,7 @@
 package com.aicontractmanager.analysis.repository;
 
 import com.aicontractmanager.analysis.dto.AiAnalysisResponse;
+import com.aicontractmanager.common.ApiTime;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -68,7 +69,7 @@ public class AiAnalysisRepository {
                 result,
                 resultSet.getTimestamp("completed_at") == null
                         ? null
-                        : resultSet.getTimestamp("completed_at").toLocalDateTime()
+                        : ApiTime.fromDatabase(resultSet.getTimestamp("completed_at").toLocalDateTime())
         );
     }
 }

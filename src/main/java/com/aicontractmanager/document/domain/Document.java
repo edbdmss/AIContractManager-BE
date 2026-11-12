@@ -1,6 +1,6 @@
 package com.aicontractmanager.document.domain;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record Document(
@@ -13,6 +13,6 @@ public record Document(
         long fileSize,
         String checksum,
         boolean primary,
-        LocalDateTime uploadedAt
+        OffsetDateTime uploadedAt
 ) {
 }

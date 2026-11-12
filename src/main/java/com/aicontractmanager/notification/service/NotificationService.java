@@ -37,6 +37,19 @@ public class NotificationService {
         return repository.markAllRead(userId);
     }
 
+    @Transactional
+    public void dismiss(UUID userId, UUID notificationId) {
+        if (repository.findOwned(notificationId, userId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다.");
+        }
+        repository.dismiss(notificationId, userId);
+    }
+
+    @Transactional
+    public int dismissAll(UUID userId) {
+        return repository.dismissAll(userId);
+    }
+
     public void cancelPendingScheduleReminders(UUID scheduleId) {
         repository.cancelPendingScheduleReminders(scheduleId);
     }

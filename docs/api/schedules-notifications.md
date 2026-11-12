@@ -2,6 +2,8 @@
 
 모든 API는 로그인 후 발급받은 Bearer 토큰이 필요합니다.
 
+날짜만 필요한 값은 `YYYY-MM-DD`로 주고받습니다. 응답의 시각 값은 Asia/Seoul 기준 ISO 8601 오프셋을 포함합니다. 예: `2026-11-12T10:30:00+09:00`.
+
 ## 일정
 
 ### 계약 일정 목록
@@ -54,9 +56,23 @@
 
 일정 알림의 생성·조회·읽음 처리와 FCM 푸시 발송을 지원합니다.
 
+### 알림 숨기기
+
+- `DELETE /api/aicontract/notifications/{notificationId}`: 알림함에서 해당 알림을 숨깁니다.
+- `POST /api/aicontract/notifications/dismiss-all`: 현재까지 도달한 알림을 모두 숨깁니다. 응답 예: `{ "dismissedCount": 3 }`.
+
+읽음 처리와 숨김은 별도 상태입니다. 숨긴 알림은 이후 목록에서 반환되지 않습니다.
+
+### 푸시 수신 설정
+
+- `GET /api/aicontract/notifications/preferences`
+- `PUT /api/aicontract/notifications/preferences` with `{ "enabled": false }`
+
+최초 설정은 활성화입니다. 비활성화하면 예약된 푸시 발송 대상에서 제외되며 앱 내 알림함은 계속 사용할 수 있습니다. 다시 활성화할 경우 아직 발송되지 않은 예약 알림이 발송 대상이 될 수 있습니다.
+
 ### 기기 푸시 토큰 등록 및 해제
 
-앱 로그인 후 FCM 토큰을 등록합니다. 사용자가 로그아웃하거나 알림 수신을 끄면 해당 토큰을 해제합니다.
+앱 로그인 후 FCM 토큰을 등록합니다. 로그아웃 또는 기기 연결 해제 시에는 해당 토큰을 해제하고, 알림 수신 설정은 위 preferences API로 별도 관리합니다.
 
 `POST /api/aicontract/notifications/devices`
 

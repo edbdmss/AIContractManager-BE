@@ -13,7 +13,7 @@ public record ContractRequest(
         @Size(max = 200) String providerName,
         LocalDate contractStartDate,
         LocalDate contractEndDate,
-        LocalDate autoRenewalDate,
+        LocalDate nextPaymentDate,
         LocalDate cancellationDeadline,
         @DecimalMin("0.00") BigDecimal monthlyAmount,
         @DecimalMin("0.00") BigDecimal penaltyAmount,

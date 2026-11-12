@@ -71,13 +71,17 @@ public class DashboardRepository {
                             AND managed_schedule.schedule_type='EXPIRY'
                             AND managed_schedule.due_date=c.contract_end_date)
                     UNION ALL
-                    SELECT c.auto_renewal_date, 'RENEWAL', c.id, c.title, '자동 갱신 예정', NULL
+                    SELECT c.auto_renewal_date,
+                           CASE WHEN c.category = 'SUBSCRIPTION' THEN 'PAYMENT' ELSE 'RENEWAL' END,
+                           c.id, c.title,
+                           CASE WHEN c.category = 'SUBSCRIPTION' THEN '다음 결제 예정' ELSE '자동 갱신 예정' END,
+                           NULL
                     FROM contracts c
                     WHERE c.user_id = ? AND c.status = 'ACTIVE' AND c.deleted_at IS NULL
                       AND c.auto_renewal_date BETWEEN ? AND ?
                       AND NOT EXISTS (SELECT 1 FROM contract_schedules managed_schedule
                           WHERE managed_schedule.contract_id=c.id AND managed_schedule.managed=TRUE
-                            AND managed_schedule.schedule_type='RENEWAL'
+                            AND managed_schedule.schedule_type = CASE WHEN c.category = 'SUBSCRIPTION' THEN 'PAYMENT' ELSE 'RENEWAL' END
                             AND managed_schedule.due_date=c.auto_renewal_date)
                     UNION ALL
                     SELECT c.cancellation_deadline, 'CANCELLATION', c.id, c.title, '해지 신청 마감', NULL
