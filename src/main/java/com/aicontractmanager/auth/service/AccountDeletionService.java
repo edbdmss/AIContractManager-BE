@@ -59,7 +59,7 @@ public class AccountDeletionService {
         jdbc.update("""
                 UPDATE contracts SET title = '삭제된 계약', category = 'DELETED', provider_name = NULL,
                     status = 'CANCELLED', source_type = 'MANUAL', contract_start_date = NULL,
-                    contract_end_date = NULL, auto_renewal_date = NULL, cancellation_deadline = NULL,
+                    contract_end_date = NULL, next_payment_date = NULL, cancellation_deadline = NULL,
                     monthly_amount = NULL, penalty_amount = NULL, cancellation_terms = NULL,
                     plain_summary = NULL, deleted_at = CURRENT_TIMESTAMP
                 WHERE user_id = ? AND deleted_at IS NULL

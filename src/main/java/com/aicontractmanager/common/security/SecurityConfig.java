@@ -33,6 +33,17 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .exceptionHandling(errors -> errors
+                        .authenticationEntryPoint((request, response, ex) -> {
+                            response.setStatus(401);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"code\":\"UNAUTHORIZED\",\"message\":\"로그인이 필요합니다.\",\"fieldErrors\":[]}");
+                        })
+                        .accessDeniedHandler((request, response, ex) -> {
+                            response.setStatus(403);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"code\":\"FORBIDDEN\",\"message\":\"접근 권한이 없습니다.\",\"fieldErrors\":[]}");
+                        }))
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

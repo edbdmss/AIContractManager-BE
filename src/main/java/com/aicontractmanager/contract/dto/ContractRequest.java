@@ -15,7 +15,7 @@ public record ContractRequest(
         LocalDate contractEndDate,
         LocalDate nextPaymentDate,
         LocalDate cancellationDeadline,
-        @DecimalMin("0.00") BigDecimal monthlyAmount,
+        @jakarta.validation.constraints.NotNull(message="금액을 입력해 주세요.") @DecimalMin("0.00") @jakarta.validation.constraints.Digits(integer=13, fraction=0) BigDecimal monthlyAmount,
         @DecimalMin("0.00") BigDecimal penaltyAmount,
         String cancellationTerms,
         String plainSummary

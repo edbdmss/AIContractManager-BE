@@ -32,3 +32,5 @@ Example create body:
 All API date-time values (for example `createdAt`, `scheduledAt`, and `sentAt`) are returned as ISO 8601 timestamps with the Asia/Seoul offset, such as `2026-11-12T10:30:00+09:00`.
 
 New non-subscription contracts have `PENDING_VERIFICATION` status and `amountVerified=false`. To confirm the saved amount, send `{"monthlyAmount":50000}` to the verification endpoint. A changed monthly amount resets verification. Missing or non-owned contracts return 404.
+
+`monthlyAmount` is required for creation/update and must be a nonnegative integer KRW value. `nextPaymentDate` is required for SUBSCRIPTION. DB column: `contracts.next_payment_date` (V8).
