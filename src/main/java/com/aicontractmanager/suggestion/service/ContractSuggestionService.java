@@ -33,7 +33,7 @@ public class ContractSuggestionService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 처리된 구독 제안입니다.");
         }
         return new SuggestionAcceptanceResponse(suggestion.id(), suggestion.merchantName(),
-                suggestion.estimatedAmount(), suggestion.estimatedCycle());
+                suggestion.estimatedAmount(), suggestion.estimatedCycle(), repository.nextPaymentDate(suggestionId, userId));
     }
 
     @Transactional

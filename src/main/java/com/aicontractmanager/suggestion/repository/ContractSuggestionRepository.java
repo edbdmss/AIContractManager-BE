@@ -53,6 +53,11 @@ public class ContractSuggestionRepository {
                 """, contractId.toString(), suggestionId.toString(), userId.toString());
     }
 
+    public java.time.LocalDate nextPaymentDate(UUID id, UUID userId) {
+        return jdbc.queryForObject("SELECT next_payment_date FROM contract_suggestions WHERE id=? AND user_id=?",
+                (rs, row) -> rs.getObject(1, java.time.LocalDate.class), id.toString(), userId.toString());
+    }
+
     private ContractSuggestion map(ResultSet rs, int rowNum) throws SQLException {
         return new ContractSuggestion(UUID.fromString(rs.getString("id")), rs.getString("merchant_name"),
                 rs.getString("category"), rs.getBigDecimal("estimated_amount"), rs.getString("estimated_cycle"),

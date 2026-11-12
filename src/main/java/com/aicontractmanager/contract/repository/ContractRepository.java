@@ -36,7 +36,7 @@ public class ContractRepository {
     public void create(UUID id, UUID userId, ContractRequest request) {
         jdbc.update("""
                 INSERT INTO contracts (id, user_id, title, category, provider_name, status, source_type, amount_verified,
-                    contract_start_date, contract_end_date, auto_renewal_date, cancellation_deadline,
+                    contract_start_date, contract_end_date, next_payment_date, cancellation_deadline,
                     monthly_amount, penalty_amount, cancellation_terms, plain_summary)
                 VALUES (?, ?, ?, ?, ?, CASE WHEN ? THEN 'ACTIVE' ELSE 'PENDING_VERIFICATION' END,
                     'MANUAL', ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -50,7 +50,7 @@ public class ContractRepository {
     public void update(UUID id, UUID userId, ContractRequest request, boolean resetAmountVerification) {
         jdbc.update("""
                 UPDATE contracts SET title = ?, category = ?, provider_name = ?, contract_start_date = ?,
-                    contract_end_date = ?, auto_renewal_date = ?, cancellation_deadline = ?, monthly_amount = ?,
+                    contract_end_date = ?, next_payment_date = ?, cancellation_deadline = ?, monthly_amount = ?,
                     penalty_amount = ?, cancellation_terms = ?, plain_summary = ?,
                     amount_verified = CASE WHEN ? THEN TRUE WHEN ? THEN FALSE ELSE amount_verified END,
                     status = CASE WHEN status IN ('CANCELLED','EXPIRED') THEN status WHEN ? THEN 'ACTIVE' WHEN ? THEN 'PENDING_VERIFICATION' ELSE status END
@@ -129,7 +129,7 @@ public class ContractRepository {
                 rs.getString("status"), rs.getString("source_type"),
                 rs.getObject("contract_start_date", LocalDate.class),
                 rs.getObject("contract_end_date", LocalDate.class),
-                rs.getObject("auto_renewal_date", LocalDate.class),
+                rs.getObject("next_payment_date", LocalDate.class),
                 rs.getObject("cancellation_deadline", LocalDate.class),
                 rs.getBigDecimal("monthly_amount"), rs.getString("currency"),
                 rs.getBigDecimal("penalty_amount"), rs.getString("cancellation_terms"),
