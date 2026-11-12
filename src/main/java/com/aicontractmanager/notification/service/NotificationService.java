@@ -37,6 +37,10 @@ public class NotificationService {
         return repository.markAllRead(userId);
     }
 
+    public void cancelPendingScheduleReminders(UUID scheduleId) {
+        repository.cancelPendingScheduleReminders(scheduleId);
+    }
+
     public void createScheduleReminder(UUID userId, UUID contractId, UUID scheduleId,
                                        ContractScheduleRequest request) {
         LocalDateTime scheduledAt = request.dueDate().minusDays(request.reminderDaysBefore()).atStartOfDay();

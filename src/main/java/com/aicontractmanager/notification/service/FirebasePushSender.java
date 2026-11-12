@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(prefix="app.push.fcm", name="enabled", havingValue="true")
 @Component
 public class FirebasePushSender {
     private final FirebaseMessaging messaging;
