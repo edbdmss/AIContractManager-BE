@@ -1,0 +1,30 @@
+﻿# Local execution outputs
+analysis_outputs/
+rag_results/
+analysis_result.json
+
+# PDF processing artifacts
+masked_spans.json
+original_spans.json
+masked_test.pdf
+highlighted_test.pdf
+
+# Temporary test documents
+fit_test.pdf
+housing_test.pdf
+insurance_test_contract.pdf
+
+# Temporary legal backups
+data/legal/*/legal_rules.backup_*.json
+
+# Subscription policy chatbot is deferred
+data/legal/subscription/
+
+# Local environment
+capstone_ai/
+.env
+__pycache__/
+
+# Local development tests
+/tests/
+/integration_tests/

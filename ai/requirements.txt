@@ -1,8 +1,17 @@
-# AI 모듈 의존성은 구현 단계에서 추가합니다.
+# FastAPI server
 fastapi
 uvicorn[standard]
-pymupdf
 python-multipart
+
+# PDF processing
+pymupdf
 pillow
+
+# Gemini API
 google-genai
+
+# Environment variables
 python-dotenv
+
+# RAG / similarity
+numpy

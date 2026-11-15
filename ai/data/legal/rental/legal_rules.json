@@ -1,0 +1,111 @@
+[
+  {
+    "rule_id": "RENTAL_LAW_001",
+    "category": "RENTAL",
+    "title": "계속거래에 해당하는 렌털의 계약 해지",
+    "law_name": "방문판매 등에 관한 법률",
+    "article": "제31조",
+    "effective_date": "2026-10-02",
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "중도 해지",
+      "계약 해지",
+      "해지 제한",
+      "해지 불가",
+      "해지 신청"
+    ],
+    "core_keywords": [
+      "중도 해지",
+      "계약 해지",
+      "해지 불가"
+    ],
+    "content": "계속거래 계약을 체결한 소비자는 원칙적으로 계약기간 중 언제든지 해지할 수 있다. 다른 법률 또는 대통령령상 예외가 있을 수 있다.",
+    "applicability": "렌털이 법률상 계속거래에 해당하는지, 단순 물품 임대차·금융리스 등 별도 계약인지, 예외가 있는지 먼저 확인해야 한다.",
+    "source_url": "https://www.law.go.kr/LSW/lsInfoP.do?efYd=20261002&lsiSeq=290239"
+  },
+  {
+    "rule_id": "RENTAL_LAW_002",
+    "category": "RENTAL",
+    "title": "계속거래 렌털의 과도한 위약금 및 환급 거부",
+    "law_name": "방문판매 등에 관한 법률",
+    "article": "제32조 제1항",
+    "effective_date": "2026-10-02",
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "위약금",
+      "중도 해지",
+      "환급 거부",
+      "환불 불가",
+      "해지 수수료",
+      "잔여 렌탈료"
+    ],
+    "core_keywords": [
+      "위약금",
+      "환급 거부",
+      "환불 불가",
+      "해지 수수료"
+    ],
+    "content": "계속거래업자 등은 자신의 책임이 없는 사유로 계약이 해지된 경우에도 발생 손실을 현저하게 초과하는 위약금을 청구하거나 실제 공급된 재화등의 대가를 초과하여 받은 대금의 환급을 부당하게 거부해서는 안 된다.",
+    "applicability": "계속거래 해당 여부, 해지 원인, 사업자 손실, 이용료 및 실제 공급 대가, 계약의 별도 규정을 확인해야 한다.",
+    "source_url": "https://www.law.go.kr/LSW/lsInfoP.do?efYd=20261002&lsiSeq=290239"
+  },
+  {
+    "rule_id": "RENTAL_LAW_003",
+    "category": "RENTAL",
+    "title": "계속거래 렌털의 물품 반환 및 환급",
+    "law_name": "방문판매 등에 관한 법률",
+    "article": "제32조 제2항·제3항",
+    "effective_date": "2026-10-02",
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "제품 반납",
+      "기기 반납",
+      "반환",
+      "회수",
+      "환급",
+      "잔여 렌탈료",
+      "정산"
+    ],
+    "core_keywords": [
+      "제품 반납",
+      "기기 반납",
+      "환급",
+      "잔여 렌탈료"
+    ],
+    "content": "계속거래 계약 해지 시 소비자는 반환 가능한 재화 등을 반환할 수 있으며, 법정 요건에 따라 환급 또는 위약금 경감 조치가 문제될 수 있다. 수령 대금이 공급 대가와 위약금의 합계보다 많으면 차액 환급 규정이 적용될 수 있다.",
+    "applicability": "계속거래 해당 여부, 반환 가능한 물품의 존재, 반납 상태, 총 납부액, 실제 공급 대가, 위약금 및 해지 사유를 확인해야 한다.",
+    "source_url": "https://www.law.go.kr/LSW/lsInfoP.do?efYd=20261002&lsiSeq=290239"
+  },
+  {
+    "rule_id": "RENTAL_DISPUTE_001",
+    "category": "RENTAL",
+    "title": "생활가전 렌털의 해지·회수 분쟁기준",
+    "law_name": "소비자분쟁해결기준",
+    "article": "별표 Ⅱ 렌털 관련 품목",
+    "effective_date": "2025-12-18",
+    "source_type": "DISPUTE_RESOLUTION_STANDARD",
+    "verification_status": "PENDING",
+    "keywords": [
+      "렌탈 해지",
+      "렌털 해지",
+      "회수비",
+      "철거비",
+      "반납비",
+      "설치비",
+      "환불"
+    ],
+    "core_keywords": [
+      "회수비",
+      "철거비",
+      "반납비",
+      "렌탈 해지",
+      "렌털 해지"
+    ],
+    "content": "렌털 계약의 해지, 제품 회수, 환급 분쟁은 해당 품목의 소비자분쟁해결기준을 확인해야 한다. 정수기 등 상품별 세부 산정 기준은 아직 검증하지 않았다.",
+    "applicability": "품목과 계약 구조, 제품 설치·사용 여부, 해지 원인 및 별표의 해당 기준을 확인해야 한다.",
+    "source_url": "https://www.law.go.kr/admRulInfoP.do?admRulSeq=2100000270136"
+  }
+]

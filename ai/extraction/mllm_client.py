@@ -32,7 +32,7 @@ PROMPT = """
 입력된 계약서 이미지 전체를 읽고 다음 11개 필드를 추출해라.
 
 - title: 계약서 제목
-- category: 계약 종류 (예: FITNESS, TELECOM, HOUSING, INSURANCE, RENTAL, OTHER)
+- category: 계약 종류 (예: FITNESS, TELECOM,SUBSCRIPTION, HOUSING, INSURANCE, RENTAL, OTHER)
 - providerName: 계약 상대 업체명
 - contractStartDate: 계약 시작일
 - contractEndDate: 계약 종료일
@@ -52,8 +52,8 @@ PROMPT = """
 6. title과 category는 필수이며, 제목이 명확하지 않으면 문서 유형을 바탕으로
    일반적인 제목을 생성한다.
 7. JSON 객체만 반환한다.
-8. category는 반드시 FITNESS, TELECOM, HOUSING,
-   INSURANCE, RENTAL, OTHER 중 하나로 작성한다.
+8. category는 반드시 FITNESS, TELECOM, SUBSCRIPTION,
+   RENTAL, HOUSING, INSURANCE, OTHER 중 하나로 작성한다.
 9. 계약서에 월 납부 금액이 없고 총액만 있는 경우,
    임의로 월 금액을 계산하지 말고 monthlyAmount는 null로 작성한다.
 10. 해지 마감일이 정확히 계산되지 않는 경우,
