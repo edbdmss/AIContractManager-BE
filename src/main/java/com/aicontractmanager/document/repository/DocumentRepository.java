@@ -6,6 +6,8 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
+import java.time.LocalDateTime;
+import com.aicontractmanager.common.ApiTime;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
@@ -50,6 +52,6 @@ public class DocumentRepository {
         return new Document(UUID.fromString(rs.getString("id")), UUID.fromString(rs.getString("contract_id")),
                 rs.getString("document_type"), rs.getString("original_filename"), rs.getString("storage_key"),
                 rs.getString("content_type"), rs.getLong("file_size"), rs.getString("checksum"),
-                rs.getBoolean("is_primary"), rs.getTimestamp("uploaded_at").toLocalDateTime());
+                rs.getBoolean("is_primary"), ApiTime.fromDatabase(rs.getObject("uploaded_at", LocalDateTime.class)));
     }
 }

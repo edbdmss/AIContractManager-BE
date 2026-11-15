@@ -21,6 +21,19 @@ public class OAuthUserRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    public AuthUser findActive(UUID userId) {
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT id, email, name, provider FROM users WHERE id = ? AND deleted_at IS NULL",
+                    (rs, rowNum) -> new AuthUser(
+                            UUID.fromString(rs.getString("id")), rs.getString("email"),
+                            rs.getString("name"), OAuthProvider.valueOf(rs.getString("provider")), false),
+                    userId.toString());
+        } catch (EmptyResultDataAccessException exception) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다.");
+        }
+    }
+
     public AuthUser upsert(OAuthProvider provider, OAuthProfile profile) {
         if (profile.providerUserId() == null || profile.providerUserId().isBlank()) {
             throw new IllegalStateException("OAuth provider user id가 없습니다.");

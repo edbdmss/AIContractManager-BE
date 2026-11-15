@@ -2,7 +2,7 @@ package com.aicontractmanager.document.dto;
 
 import com.aicontractmanager.document.domain.Document;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record DocumentResponse(
@@ -14,7 +14,7 @@ public record DocumentResponse(
         long fileSize,
         String checksum,
         boolean primary,
-        LocalDateTime uploadedAt
+        OffsetDateTime uploadedAt
 ) {
     public static DocumentResponse from(Document document) {
         return new DocumentResponse(document.id(), document.contractId(), document.documentType(),

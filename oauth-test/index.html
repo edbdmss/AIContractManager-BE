@@ -63,7 +63,7 @@
       setStatus(`${provider} 로그인 페이지를 여는 중...`);
       try {
         const params = new URLSearchParams({ redirectUri });
-        const data = await api(`/api/v1/auth/${provider}/authorize?${params}`);
+        const data = await api(`/api/aicontract/auth/${provider}/authorize?${params}`);
         const destination = new URL(data.authorizationUrl);
         const expectedHost = provider === "kakao" ? "kauth.kakao.com" : "nid.naver.com";
         if (destination.protocol !== "https:" || destination.hostname !== expectedHost || !data.state) {
@@ -99,7 +99,7 @@
 
       setStatus(`${pending.provider} 인증 코드를 확인하는 중...`);
       try {
-        const data = await api(`/api/v1/auth/${pending.provider}/login`, {
+        const data = await api(`/api/aicontract/auth/${pending.provider}/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ code: params.get("code"), state: params.get("state"), redirectUri })

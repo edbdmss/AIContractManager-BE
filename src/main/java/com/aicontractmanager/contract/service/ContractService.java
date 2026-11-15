@@ -63,10 +63,22 @@ public class ContractService {
         repository.delete(id, userId);
     }
 
+    @Transactional
+    public Contract cancel(UUID userId, UUID id) {
+        get(userId, id);
+        repository.cancel(id, userId);
+        return get(userId, id);
+    }
+
     private void validateDates(ContractRequest request) {
         if (request.contractStartDate() != null && request.contractEndDate() != null
                 && request.contractEndDate().isBefore(request.contractStartDate())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "계약 종료일은 시작일보다 빠를 수 없습니다.");
+        }
+        if ("SUBSCRIPTION".equalsIgnoreCase(request.category())
+                && (request.monthlyAmount() == null || request.nextPaymentDate() == null)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "구독은 월 금액과 다음 결제일을 입력해야 합니다.");
         }
     }
 

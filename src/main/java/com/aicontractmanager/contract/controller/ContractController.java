@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/contracts")
+@RequestMapping("/api/aicontract/contracts")
 public class ContractController {
 
     private final ContractService service;
@@ -31,8 +31,19 @@ public class ContractController {
     }
 
     @GetMapping
-    public List<Contract> list(Principal principal) {
-        return service.list(userId(principal));
+    public List<Contract> list(Principal principal,
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue="created") String sort) {
+        List<Contract> result = service.list(userId(principal));
+        return switch (sort) {
+            case "created" -> result;
+            case "amount" -> result.stream().sorted(java.util.Comparator.comparing(Contract::monthlyAmount,
+                    java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder()))).toList();
+            case "deadline" -> result.stream().sorted(java.util.Comparator.comparing(
+                    c -> java.util.stream.Stream.of(c.cancellationDeadline(), c.nextPaymentDate(), c.contractEndDate())
+                            .filter(java.util.Objects::nonNull).min(java.time.LocalDate::compareTo).orElse(null),
+                    java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()))).toList();
+            default -> throw new org.springframework.web.server.ResponseStatusException(HttpStatus.BAD_REQUEST,"지원하지 않는 정렬입니다.");
+        };
     }
 
     @GetMapping("/{id}")
@@ -55,6 +66,11 @@ public class ContractController {
     public Contract verifyAmount(Principal principal, @PathVariable UUID id,
                                  @Valid @RequestBody AmountVerificationRequest request) {
         return service.verifyAmount(userId(principal), id, request.monthlyAmount());
+    }
+
+    @PostMapping("/{id}/cancel")
+    public Contract cancel(Principal principal, @PathVariable UUID id) {
+        return service.cancel(userId(principal), id);
     }
 
     @DeleteMapping("/{id}")

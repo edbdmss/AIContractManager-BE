@@ -35,33 +35,37 @@ public class ContractRepository {
 
     public void create(UUID id, UUID userId, ContractRequest request) {
         jdbc.update("""
-                INSERT INTO contracts (id, user_id, title, category, provider_name, status, source_type,
-                    contract_start_date, contract_end_date, auto_renewal_date, cancellation_deadline,
+                INSERT INTO contracts (id, user_id, title, category, provider_name, status, source_type, amount_verified,
+                    contract_start_date, contract_end_date, next_payment_date, cancellation_deadline,
                     monthly_amount, penalty_amount, cancellation_terms, plain_summary)
-                VALUES (?, ?, ?, ?, ?, 'PENDING_VERIFICATION', 'MANUAL', ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, CASE WHEN ? THEN 'ACTIVE' ELSE 'PENDING_VERIFICATION' END,
+                    'MANUAL', ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, id.toString(), userId.toString(), request.title(), request.category(), request.providerName(),
-                request.contractStartDate(), request.contractEndDate(), request.autoRenewalDate(),
+                isSubscription(request), isSubscription(request), request.contractStartDate(), request.contractEndDate(), request.nextPaymentDate(),
                 request.cancellationDeadline(), request.monthlyAmount(), request.penaltyAmount(),
                 request.cancellationTerms(), request.plainSummary());
+        syncSchedules(id, userId);
     }
 
     public void update(UUID id, UUID userId, ContractRequest request, boolean resetAmountVerification) {
         jdbc.update("""
                 UPDATE contracts SET title = ?, category = ?, provider_name = ?, contract_start_date = ?,
-                    contract_end_date = ?, auto_renewal_date = ?, cancellation_deadline = ?, monthly_amount = ?,
+                    contract_end_date = ?, next_payment_date = ?, cancellation_deadline = ?, monthly_amount = ?,
                     penalty_amount = ?, cancellation_terms = ?, plain_summary = ?,
-                    amount_verified = CASE WHEN ? THEN FALSE ELSE amount_verified END,
-                    status = CASE WHEN ? THEN 'PENDING_VERIFICATION' ELSE status END
+                    amount_verified = CASE WHEN ? THEN TRUE WHEN ? THEN FALSE ELSE amount_verified END,
+                    status = CASE WHEN status IN ('CANCELLED','EXPIRED') THEN status WHEN ? THEN 'ACTIVE' WHEN ? THEN 'PENDING_VERIFICATION' ELSE status END
                 WHERE id = ? AND user_id = ? AND deleted_at IS NULL
                 """, request.title(), request.category(), request.providerName(), request.contractStartDate(),
-                request.contractEndDate(), request.autoRenewalDate(), request.cancellationDeadline(),
+                request.contractEndDate(), request.nextPaymentDate(), request.cancellationDeadline(),
                 request.monthlyAmount(), request.penaltyAmount(), request.cancellationTerms(), request.plainSummary(),
-                resetAmountVerification, resetAmountVerification, id.toString(), userId.toString());
+                isSubscription(request), resetAmountVerification, isSubscription(request), resetAmountVerification,
+                id.toString(), userId.toString());
+        syncSchedules(id, userId);
     }
 
     public void verifyAmount(UUID id, UUID userId) {
         jdbc.update("""
-                UPDATE contracts SET amount_verified = TRUE, status = 'ACTIVE'
+                UPDATE contracts SET amount_verified = TRUE, status = CASE WHEN status IN ('CANCELLED','EXPIRED') THEN status ELSE 'ACTIVE' END
                 WHERE id = ? AND user_id = ? AND deleted_at IS NULL
                 """, id.toString(), userId.toString());
     }
@@ -69,6 +73,53 @@ public class ContractRepository {
     public void delete(UUID id, UUID userId) {
         jdbc.update("UPDATE contracts SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ? AND deleted_at IS NULL",
                 id.toString(), userId.toString());
+        cancelReminders(id);
+    }
+
+    public void cancel(UUID id, UUID userId) {
+        jdbc.update("UPDATE contracts SET status='CANCELLED' WHERE id=? AND user_id=? AND deleted_at IS NULL",
+                id.toString(), userId.toString());
+        cancelReminders(id);
+    }
+
+    private void cancelReminders(UUID id) {
+        jdbc.update("UPDATE contract_schedules SET status='DISMISSED' WHERE contract_id=? AND status='PENDING'", id.toString());
+        jdbc.update("UPDATE notifications SET dispatch_status='CANCELLED', dispatch_claimed_at=NULL WHERE contract_id=? AND dispatch_status IN ('PENDING','SENDING')", id.toString());
+    }
+
+    private void syncSchedules(UUID id, UUID userId) {
+        Contract contract = findOwned(id, userId).orElseThrow();
+        if (java.util.Set.of("CANCELLED", "EXPIRED").contains(contract.status())) return;
+        syncSchedule(id, userId, "EXPIRY", contract.contractEndDate(), "계약 만료 예정");
+        boolean subscription = "SUBSCRIPTION".equalsIgnoreCase(contract.category());
+        syncSchedule(id, userId, "RENEWAL", subscription ? null : contract.nextPaymentDate(),
+                "계약 자동 갱신 예정");
+        syncSchedule(id, userId, "PAYMENT", subscription ? contract.nextPaymentDate() : null,
+                "구독 결제 예정");
+        syncSchedule(id, userId, "CANCELLATION", contract.cancellationDeadline(), "계약 해지 신청 마감");
+    }
+
+    private void syncSchedule(UUID contractId, UUID userId, String type, LocalDate date, String title) {
+        var existing = jdbc.queryForList("SELECT id, due_date, status FROM contract_schedules WHERE contract_id=? AND schedule_type=? AND managed=TRUE ORDER BY created_at DESC",
+                contractId.toString(), type);
+        // Keep an unchanged date, including a reminder the user already completed or dismissed.
+        if (!existing.isEmpty() && date != null && date.equals(((java.sql.Date)existing.get(0).get("due_date")).toLocalDate())) return;
+        for (var row : existing) {
+            String scheduleId = row.get("id").toString();
+            jdbc.update("UPDATE contract_schedules SET managed=FALSE, status=CASE WHEN status='PENDING' THEN 'DISMISSED' ELSE status END WHERE id=?", scheduleId);
+            jdbc.update("UPDATE notifications SET dispatch_status='CANCELLED', dispatch_claimed_at=NULL WHERE schedule_id=? AND dispatch_status IN ('PENDING','SENDING')", scheduleId);
+        }
+        if (date == null || date.isBefore(LocalDate.now())) return;
+        String scheduleId = UUID.randomUUID().toString();
+        jdbc.update("INSERT INTO contract_schedules(id,contract_id,schedule_type,due_date,action_title,reminder_days_before,managed) VALUES(?,?,?,?,?,3,TRUE)",
+                scheduleId, contractId.toString(), type, date, title);
+        jdbc.update("INSERT INTO notifications(id,user_id,contract_id,schedule_id,notification_type,title,body,scheduled_at) VALUES(?,?,?,?,'SCHEDULE_REMINDER',?,?,?)",
+                UUID.randomUUID().toString(),userId.toString(),contractId.toString(),scheduleId,title,
+                date + "까지 계약 내용을 확인해 주세요.",date.minusDays(3).atTime(9,0));
+    }
+
+    private boolean isSubscription(ContractRequest request) {
+        return "SUBSCRIPTION".equalsIgnoreCase(request.category());
     }
 
     private Contract map(ResultSet rs, int rowNum) throws SQLException {
@@ -78,7 +129,7 @@ public class ContractRepository {
                 rs.getString("status"), rs.getString("source_type"),
                 rs.getObject("contract_start_date", LocalDate.class),
                 rs.getObject("contract_end_date", LocalDate.class),
-                rs.getObject("auto_renewal_date", LocalDate.class),
+                rs.getObject("next_payment_date", LocalDate.class),
                 rs.getObject("cancellation_deadline", LocalDate.class),
                 rs.getBigDecimal("monthly_amount"), rs.getString("currency"),
                 rs.getBigDecimal("penalty_amount"), rs.getString("cancellation_terms"),

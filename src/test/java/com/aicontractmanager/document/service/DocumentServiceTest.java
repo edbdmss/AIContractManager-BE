@@ -67,7 +67,7 @@ class DocumentServiceTest {
         when(repository.findAll(contractId)).thenReturn(List.of());
         when(repository.find(eq(contractId), any(UUID.class))).thenAnswer(invocation -> Optional.of(new Document(
                 invocation.getArgument(1), contractId, "CONTRACT", "contract.pdf", "random.pdf",
-                "application/pdf", bytes.length, "checksum", true, LocalDateTime.now())));
+                "application/pdf", bytes.length, "checksum", true, java.time.OffsetDateTime.now())));
 
         Document document = service.upload(userId, contractId, file);
 

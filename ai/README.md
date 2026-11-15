@@ -1,5 +1,42 @@
 AI 서버 
 
+## 로컬 실행
+
+AI 서버는 Spring Boot와 별도의 프로세스로 실행합니다. Spring Boot가 `http://localhost:8000/analyze`로 PDF를 전달하고, AI 서버가 분석 결과 JSON을 반환합니다.
+
+PowerShell 기준:
+
+```powershell
+cd AIContractManager-BE\ai
+python -m venv capstone_ai
+.\capstone_ai\Scripts\Activate.ps1
+pip install -r requirements.txt
+Copy-Item .env.example .env
+notepad .env
+python -m uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+`.env`에는 다음처럼 키를 입력합니다.
+
+```text
+GEMINI_API_KEY=실제_Gemini_API_키
+```
+
+Spring Boot는 별도 터미널에서 실행합니다.
+
+```powershell
+cd AIContractManager-BE
+mvn spring-boot:run -Dspring-boot.run.profiles=local
+```
+
+연결 확인:
+
+```powershell
+Invoke-WebRequest http://localhost:8000/health
+```
+
+응답에 `{"status":"ok"}`가 나오면 AI 서버가 실행된 상태입니다. 이후 웹에서 계약서 분석을 요청하면 Spring Boot가 업로드된 문서를 AI 서버로 전달합니다.
+
 1. 주요 기능
 
 1.1 개인정보 마스킹
@@ -122,6 +159,13 @@ POST /analyze
 오류 응답
 - `400 Bad Request` : PDF가 아닌 파일 또는 빈 파일 업로드
 - `422 Unprocessable Entity` : 개인정보 마스킹 검토가 필요한 경우
+
+개발 환경에서는 개인정보 마스킹 경고가 발생해도 경고를 로그에 남긴 후 분석을 계속합니다.
+운영 환경에서 마스킹 경고를 분석 중단으로 처리하려면 다음처럼 실행합니다.
+
+```bash
+AI_ENV=production python -m uvicorn main:app --port 8000
+```
 - `502 Bad Gateway` : 계약서 AI 분석 처리 중 오류 발생
 
 

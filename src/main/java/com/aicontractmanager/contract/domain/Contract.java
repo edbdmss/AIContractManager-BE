@@ -14,7 +14,7 @@ public record Contract(
         String sourceType,
         LocalDate contractStartDate,
         LocalDate contractEndDate,
-        LocalDate autoRenewalDate,
+        LocalDate nextPaymentDate,
         LocalDate cancellationDeadline,
         BigDecimal monthlyAmount,
         String currency,
