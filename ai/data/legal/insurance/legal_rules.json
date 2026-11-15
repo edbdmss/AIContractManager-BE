@@ -1,0 +1,262 @@
+[
+  {
+    "rule_id": "INSURANCE_LAW_001",
+    "category": "INSURANCE",
+    "title": "보험약관 교부와 중요사항 설명",
+    "law_name": "상법",
+    "article": "제638조의3",
+    "effective_date": null,
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "약관 교부",
+      "설명의무",
+      "중요사항",
+      "면책 설명",
+      "보장 제외",
+      "고지 안내"
+    ],
+    "core_keywords": [
+      "설명의무",
+      "약관 교부",
+      "중요사항"
+    ],
+    "content": "보험자는 계약 체결 시 보험약관을 교부하고 중요한 내용을 설명해야 한다. 이를 위반하면 보험계약자는 계약 성립일부터 3개월 이내 취소할 수 있다.",
+    "applicability": "약관 교부·설명 사실, 중요사항 여부, 계약 체결일을 확인한다. 계약 문구만으로 설명의무 위반을 확정하지 않는다.",
+    "source_url": "https://www.law.go.kr/lsInfoP.do?lsId=001702"
+  },
+  {
+    "rule_id": "INSURANCE_LAW_002",
+    "category": "INSURANCE",
+    "title": "보험 가입 시 고지의무 위반 해지 요건",
+    "law_name": "상법",
+    "article": "제651조",
+    "effective_date": null,
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "고지의무",
+      "병력",
+      "직업",
+      "건강 상태",
+      "고지 누락",
+      "허위 고지",
+      "계약 해지"
+    ],
+    "core_keywords": [
+      "고지의무",
+      "고지 누락",
+      "허위 고지"
+    ],
+    "content": "계약 당시 고의 또는 중대한 과실로 중요한 사항을 알리지 않거나 사실과 다르게 알린 경우 보험자는 원칙적으로 안 날부터 1개월, 계약일부터 3년 내 해지할 수 있다. 보험자가 알았거나 중대한 과실로 몰랐다면 예외다.",
+    "applicability": "질문 내용과 중요성, 고의·중과실, 보험자 인지 시점, 계약 체결일을 확인한다. 모든 누락이 곧바로 해지 사유는 아니다.",
+    "source_url": "https://www.law.go.kr/lsInfoP.do?lsId=001702"
+  },
+  {
+    "rule_id": "INSURANCE_LAW_003",
+    "category": "INSURANCE",
+    "title": "서면 질문과 중요사항 추정",
+    "law_name": "상법",
+    "article": "제651조의2",
+    "effective_date": null,
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "서면 질문",
+      "청약서 질문",
+      "질문서",
+      "고지 사항",
+      "중요사항"
+    ],
+    "core_keywords": [
+      "서면 질문",
+      "청약서 질문"
+    ],
+    "content": "보험자가 서면으로 질문한 사항은 고지의무의 중요한 사항으로 추정된다.",
+    "applicability": "실제 청약서·전자질문서의 질문 및 답변과 설명·정정 경위를 확인한다.",
+    "source_url": "https://www.law.go.kr/lsInfoP.do?lsId=001702"
+  },
+  {
+    "rule_id": "INSURANCE_LAW_004",
+    "category": "INSURANCE",
+    "title": "보험사고 면책의 법정 기준",
+    "law_name": "상법",
+    "article": "제659조 제1항",
+    "effective_date": null,
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "면책",
+      "보장 제외",
+      "보험금 미지급",
+      "고의",
+      "중대한 과실",
+      "과실",
+      "지급 거절"
+    ],
+    "core_keywords": [
+      "면책",
+      "보장 제외",
+      "보험금 미지급"
+    ],
+    "content": "보험사고가 보험계약자·피보험자·보험수익자의 고의 또는 중대한 과실로 발생한 경우 보험자는 보험금 지급 책임이 없다는 규정이다. 구체적인 상품·약관과 강행규정 적용을 함께 확인해야 한다.",
+    "applicability": "보험 유형, 사고 원인, 고의·중과실, 약관의 면책 범위와 법률 적용을 확인한다. 단순 과실 전부를 면책하는 조항은 추가 검토가 필요하다.",
+    "source_url": "https://www.law.go.kr/lsInfoP.do?lsId=001702"
+  },
+  {
+    "rule_id": "INSURANCE_LAW_005",
+    "category": "INSURANCE",
+    "title": "고지의무 위반과 보험사고 사이 인과관계",
+    "law_name": "상법",
+    "article": "제655조",
+    "effective_date": null,
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "인과관계",
+      "고지 누락",
+      "보험금 거절",
+      "면책",
+      "계약 해지",
+      "보험사고"
+    ],
+    "core_keywords": [
+      "인과관계",
+      "보험금 거절",
+      "고지 누락"
+    ],
+    "content": "고지의무 위반 등을 이유로 적법하게 해지한 경우에도 그 위반 사실이나 위험 증가가 보험사고 발생에 영향을 미치지 않았음이 증명되면 보험금 지급 책임이 남을 수 있다.",
+    "applicability": "해지 근거, 사고 원인과 고지 누락의 관련성, 증명 자료를 확인한다. 인과관계가 없다고 자동 확정하지 않는다.",
+    "source_url": "https://www.law.go.kr/lsInfoP.do?lsId=001702"
+  },
+  {
+    "rule_id": "INSURANCE_LAW_006",
+    "category": "INSURANCE",
+    "title": "계속 보험료 연체와 계약 해지",
+    "law_name": "상법",
+    "article": "제650조 제2항·제3항",
+    "effective_date": null,
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "보험료 연체",
+      "미납",
+      "자동 해지",
+      "납입 최고",
+      "독촉",
+      "실효"
+    ],
+    "core_keywords": [
+      "보험료 연체",
+      "미납",
+      "납입 최고"
+    ],
+    "content": "계속보험료 미납 시 보험자는 상당한 기간을 정해 납부를 최고하고 기간 내 미납인 경우 해지할 수 있다. 특정한 타인을 위한 보험은 그 타인에 대한 최고도 문제된다.",
+    "applicability": "최초 보험료와 계속 보험료를 구분하고, 독촉 방식·기간·도달 여부를 확인한다.",
+    "source_url": "https://www.law.go.kr/lsInfoP.do?lsId=001702"
+  },
+  {
+    "rule_id": "INSURANCE_LAW_007",
+    "category": "INSURANCE",
+    "title": "위험 변경·증가의 통지",
+    "law_name": "상법",
+    "article": "제652조",
+    "effective_date": null,
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "위험 증가",
+      "직업 변경",
+      "통지의무",
+      "위험 변경",
+      "보험료 증액",
+      "계약 해지"
+    ],
+    "core_keywords": [
+      "위험 증가",
+      "통지의무",
+      "직업 변경"
+    ],
+    "content": "보험기간 중 사고 발생 위험이 현저히 변경 또는 증가된 사실을 안 경우 지체 없이 보험자에게 통지해야 하며, 법정 요건에서 해지나 보험료 증액이 문제될 수 있다.",
+    "applicability": "위험 증가의 현저성, 인지·통지 시점, 보험자 조치 기간을 확인한다.",
+    "source_url": "https://www.law.go.kr/lsInfoP.do?lsId=001702"
+  },
+  {
+    "rule_id": "INSURANCE_LAW_008",
+    "category": "INSURANCE",
+    "title": "보험계약자 등에게 불리한 특약 제한",
+    "law_name": "상법",
+    "article": "제663조",
+    "effective_date": null,
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "불리한 특약",
+      "권리 포기",
+      "면책 확대",
+      "보험금 포기",
+      "특약",
+      "보장 제한"
+    ],
+    "core_keywords": [
+      "불리한 특약",
+      "면책 확대",
+      "권리 포기"
+    ],
+    "content": "상법 보험편의 규정은 원칙적으로 보험계약자·피보험자·보험수익자에게 불리하게 특약으로 변경할 수 없다. 재보험·해상보험 등 예외가 있다.",
+    "applicability": "적용 보험 유형과 관련 강행규정, 특약이 법정 권리를 실제 축소하는지 확인한다.",
+    "source_url": "https://www.law.go.kr/lsInfoP.do?lsId=001702"
+  },
+  {
+    "rule_id": "INSURANCE_LAW_009",
+    "category": "INSURANCE",
+    "title": "보장성 보험상품 중요사항 설명",
+    "law_name": "금융소비자 보호에 관한 법률",
+    "article": "제19조 제1항",
+    "effective_date": null,
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "보장 범위",
+      "보장 제외",
+      "보험금 지급 제한",
+      "면책 설명",
+      "설명의무",
+      "보험금 지급 절차"
+    ],
+    "core_keywords": [
+      "보장 제외",
+      "설명의무",
+      "보험금 지급 제한"
+    ],
+    "content": "일반금융소비자에게 보장성 상품을 권유하거나 설명 요청을 받은 경우 보장 범위, 보험금 지급 제한 사유와 절차 등 중요한 사항을 이해할 수 있도록 설명해야 한다.",
+    "applicability": "판매·권유 상황, 소비자 유형, 실제 설명 자료 및 설명 여부를 확인한다.",
+    "source_url": "https://www.law.go.kr/lsInfoP.do?lsId=012324"
+  },
+  {
+    "rule_id": "INSURANCE_LAW_010",
+    "category": "INSURANCE",
+    "title": "법정 위법계약 해지요구권",
+    "law_name": "금융소비자 보호에 관한 법률",
+    "article": "제47조",
+    "effective_date": null,
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "위법계약",
+      "계약 해지",
+      "해지 수수료",
+      "위약금",
+      "불완전 판매",
+      "설명의무 위반"
+    ],
+    "core_keywords": [
+      "위법계약",
+      "불완전 판매",
+      "해지 수수료"
+    ],
+    "content": "법이 열거한 판매규제 위반으로 대통령령상 해당 금융상품 계약을 체결한 경우 일정 요건과 기간 내 위법계약 해지를 요구할 수 있다. 적법하게 해지되면 해지 관련 수수료·위약금을 요구할 수 없다.",
+    "applicability": "위반 유형, 상품 적용 대상, 법정 행사 기간, 서면 요구 및 사업자 회신을 확인한다. 모든 보험 계약의 자유로운 무위약금 해지를 뜻하지 않는다.",
+    "source_url": "https://www.law.go.kr/lsInfoP.do?lsId=012324"
+  }
+]

@@ -1,0 +1,183 @@
+[
+  {
+    "rule_id": "FITNESS_LAW_001",
+    "category": "FITNESS",
+    "title": "계속거래 계약의 해지",
+    "law_name": "방문판매 등에 관한 법률",
+    "article": "제31조",
+    "effective_date": "2026-10-02",
+    "source_type": "LAW",
+    "keywords": [
+      "중도 해지",
+      "계약 해지",
+      "해지 신청",
+      "해지 제한",
+      "이용 기간",
+      "해지 불가",
+      "해지 금지",
+      "해지 요청"
+    ],
+    "content": "계속거래등의 계약을 체결한 소비자는 원칙적으로 계약기간 중 언제든지 계약을 해지할 수 있다. 다른 법률에 별도 규정이 있거나 대통령령으로 정하는 예외가 있을 수 있다.",
+    "applicability": "해당 계약이 방문판매법상 계속거래에 해당하는지 확인해야 한다.",
+    "source_url": "https://www.law.go.kr/LSW/lsInfoP.do?efYd=20261002&lsiSeq=290239",
+    "verification_status": "VERIFIED",
+    "core_keywords": [
+      "중도 해지",
+      "계약 해지",
+      "해지 불가"
+    ]
+  },
+  {
+    "rule_id": "FITNESS_LAW_002",
+    "category": "FITNESS",
+    "title": "위약금 및 환급 제한",
+    "law_name": "방문판매 등에 관한 법률",
+    "article": "제32조 제1항",
+    "effective_date": "2026-10-02",
+    "source_type": "LAW",
+    "keywords": [
+      "위약금",
+      "환불",
+      "환급",
+      "미이용 기간",
+      "중도 해지",
+      "손실",
+      "환불 불가",
+      "환급 거부",
+      "반환하지"
+    ],
+    "content": "계속거래업자등은 자신의 책임이 없는 사유로 계약이 해지 또는 해제된 경우에도 발생 손실을 현저히 초과하는 위약금을 청구하거나 실제 공급된 재화등의 대가를 초과하여 수령한 대금의 환급을 부당하게 거부해서는 안 된다.",
+    "applicability": "계속거래 해당 여부와 해지 사유, 실제 공급된 서비스 대가를 확인해야 한다.",
+    "source_url": "https://www.law.go.kr/LSW/lsInfoP.do?efYd=20261002&lsiSeq=290239",
+    "verification_status": "VERIFIED",
+    "core_keywords": [
+      "위약금",
+      "환불 불가",
+      "환급 거부"
+    ]
+  },
+  {
+    "rule_id": "FITNESS_LAW_003",
+    "category": "FITNESS",
+    "title": "계약 해지 시 차액 환급",
+    "law_name": "방문판매 등에 관한 법률",
+    "article": "제32조 제3항",
+    "effective_date": "2026-10-02",
+    "source_type": "LAW",
+    "keywords": [
+      "환급",
+      "환불",
+      "정산",
+      "미이용 기간",
+      "위약금",
+      "잔여 이용료",
+      "반환하지"
+    ],
+    "content": "계속거래업자등은 자신의 책임이 없는 사유로 계약이 해지 또는 해제된 경우 받은 대금이 이미 공급한 재화등의 대금과 위약금 합계보다 많으면 차액을 환급하여야 한다.",
+    "applicability": "해지 사유, 총 납부액, 이미 공급한 서비스 대금 및 위약금을 확인해야 한다.",
+    "source_url": "https://www.law.go.kr/LSW/lsInfoP.do?efYd=20261002&lsiSeq=290239",
+    "verification_status": "VERIFIED",
+    "core_keywords": [
+      "환급",
+      "환불",
+      "잔여 이용료"
+    ]
+  },
+  {
+    "rule_id": "FITNESS_LAW_004",
+    "category": "FITNESS",
+    "title": "부당한 해지 방해",
+    "law_name": "방문판매 등에 관한 법률",
+    "article": "제34조 제1항 제2호·제4호",
+    "effective_date": "2026-10-02",
+    "source_type": "LAW",
+    "keywords": [
+      "해지 거부",
+      "해지 방해",
+      "해지 신청",
+      "처리 지연",
+      "계약 해제",
+      "해지 요청",
+      "무기한 연기"
+    ],
+    "content": "계속거래업자등은 거짓·과장 또는 기만적인 방법으로 해지를 방해하거나, 소비자가 해지한 뒤 정당한 사유 없이 후속 조치를 지연하거나 거부하는 행위를 해서는 안 된다.",
+    "applicability": "실제 사업자의 행위와 해지 요청 처리 경위를 확인해야 한다.",
+    "source_url": "https://www.law.go.kr/LSW/lsInfoP.do?efYd=20261002&lsiSeq=290239",
+    "verification_status": "VERIFIED",
+    "core_keywords": [
+      "해지 방해",
+      "해지 거부",
+      "해지 요청"
+    ]
+  },
+  {
+    "rule_id": "FITNESS_DISPUTE_001",
+    "category": "FITNESS",
+    "title": "소비자 사유에 따른 중도 해지 환급",
+    "source_type": "DISPUTE_RESOLUTION_STANDARD",
+    "law_name": "소비자분쟁해결기준",
+    "article": "별표 2 체육시설업",
+    "effective_date": null,
+    "verification_status": "PENDING",
+    "keywords": [
+      "중도 해지",
+      "환급",
+      "위약금",
+      "이용 기간",
+      "미이용 기간"
+    ],
+    "content": "이용 기간 또는 이용 횟수에 따른 공제액과 위약금을 반영하여 환급액을 산정한다.",
+    "applicability": "소비자 귀책사유, 이용개시 여부, 기간제 또는 횟수제 여부에 따라 구분한다.",
+    "source_url": "https://www.law.go.kr/admRulInfoP.do?admRulSeq=2100000270136"
+  },
+  {
+    "rule_id": "FITNESS_LAW_005",
+    "category": "FITNESS",
+    "title": "체육시설 이용료 반환기준",
+    "law_name": "체육시설의 설치·이용에 관한 법률 시행령",
+    "article": "제21조의3 및 별표 3의2",
+    "effective_date": "2026-03-26",
+    "source_type": "ENFORCEMENT_DECREE",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "중도 해지",
+      "위약금",
+      "환급",
+      "환불",
+      "미이용 기간",
+      "이용료",
+      "정산"
+    ],
+    "content": "이용료 반환사유와 반환금액에 관하여 별도 약정이 없는 경우 시행령 별표 3의2에 따른 반환기준이 적용된다. 별표는 반환사유, 이용개시 여부, 기간제 또는 횟수제 계약에 따라 반환금액을 산정하며 위약금을 이용료의 10%로 정한다.",
+    "applicability": "체육시설법 제22조 제1항 제4호의 반환사유에 해당하는지, 별도 약정이 있는지, 해지 사유와 이용개시 여부를 확인해야 한다.",
+    "source_url": "https://www.law.go.kr/LSW/lsInfoP.do?efYd=20260326&lsiSeq=270135"
+  },
+  {
+    "rule_id": "FITNESS_LAW_006",
+    "category": "FITNESS",
+    "title": "계속거래 용역 자동갱신 계약의 종료일 사전 통지",
+    "law_name": "방문판매 등에 관한 법률",
+    "article": "제30조 제3항",
+    "effective_date": "2026-10-02",
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "자동 갱신",
+      "자동 연장",
+      "계약 갱신",
+      "갱신 거절",
+      "종료일",
+      "사전 통지",
+      "계약 연장"
+    ],
+    "core_keywords": [
+      "자동 갱신",
+      "자동 연장",
+      "계약 갱신",
+      "갱신 거절"
+    ],
+    "content": "계속거래업자가 소비자의 별도 의사표시 없이 자동 갱신되는 용역 계약을 체결한 경우 원칙적으로 계약 종료일 50일 전부터 20일 전까지 종료일이 다가옴을 서면이나 전자우편으로 통지해야 한다. 다만 거래기간이 2개월 이내이거나 소비자가 재계약 또는 갱신 의사를 표시한 경우 통지를 생략할 수 있다.",
+    "applicability": "계속거래에 해당하는 용역 계약인지, 거래기간이 2개월을 초과하는지, 소비자가 갱신 의사를 별도로 표시했는지, 종료일 통지가 실제로 이루어졌는지 확인한다. 자동갱신 조항만으로 위법성을 확정하지 않는다.",
+    "source_url": "https://www.law.go.kr/LSW/lsInfoP.do?efYd=20261002&lsiSeq=290239"
+  }
+]

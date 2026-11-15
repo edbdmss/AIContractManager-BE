@@ -1,0 +1,271 @@
+[
+  {
+    "rule_id": "HOUSING_LAW_001",
+    "category": "HOUSING",
+    "title": "임대차 종료와 보증금 반환",
+    "law_name": "주택임대차보호법",
+    "article": "제4조 제2항",
+    "effective_date": null,
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "보증금",
+      "보증금 반환",
+      "퇴거",
+      "계약 종료",
+      "반환 거부",
+      "반환 지연",
+      "전세금"
+    ],
+    "core_keywords": [
+      "보증금 반환",
+      "반환 거부",
+      "반환 지연"
+    ],
+    "content": "임대차기간이 끝나더라도 임차인이 보증금을 돌려받을 때까지 임대차관계가 존속하는 것으로 본다.",
+    "applicability": "주거용 건물 임대차 여부, 임대차 종료, 보증금 정산 및 반환 사실을 확인한다. 보증금 반환시기·공제액은 개별 사정에 따라 달라질 수 있다.",
+    "source_url": "https://www.law.go.kr/lsInfoP.do?lsId=001248"
+  },
+  {
+    "rule_id": "HOUSING_LAW_002",
+    "category": "HOUSING",
+    "title": "임차인의 대항력",
+    "law_name": "주택임대차보호법",
+    "article": "제3조 제1항",
+    "effective_date": null,
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "전입신고",
+      "주민등록",
+      "대항력",
+      "점유",
+      "임차권",
+      "인도"
+    ],
+    "core_keywords": [
+      "전입신고",
+      "대항력",
+      "주민등록"
+    ],
+    "content": "주택을 인도받고 주민등록을 마친 임차인은 원칙적으로 그 다음 날부터 제3자에게 임대차를 주장할 수 있다.",
+    "applicability": "주택 인도·전입신고 완료 시점, 실제 거주, 권리 변동 시점을 확인한다. 계약서 문구만으로 대항력 취득 여부를 확정하지 않는다.",
+    "source_url": "https://www.law.go.kr/lsInfoP.do?lsId=001248"
+  },
+  {
+    "rule_id": "HOUSING_LAW_003",
+    "category": "HOUSING",
+    "title": "임대인의 사용·수익 상태 유지 및 수선 의무",
+    "law_name": "민법",
+    "article": "제623조",
+    "effective_date": null,
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "수선",
+      "수리",
+      "누수",
+      "보일러",
+      "배관",
+      "고장",
+      "하자",
+      "수선비",
+      "수리비",
+      "임차인 부담"
+    ],
+    "core_keywords": [
+      "수선",
+      "수리",
+      "누수",
+      "수선비"
+    ],
+    "content": "임대인은 임차목적물을 인도하고 계약 중 사용·수익에 필요한 상태를 유지할 의무가 있다.",
+    "applicability": "하자의 규모와 원인, 사용 불능 정도, 계약상 수선 분담 및 임차인의 귀책 여부를 확인한다. 모든 경미한 수선이 임대인 부담인 것은 아니다.",
+    "source_url": "https://www.law.go.kr/lsInfoP.do?lsId=001284"
+  },
+  {
+    "rule_id": "HOUSING_LAW_004",
+    "category": "HOUSING",
+    "title": "임차인의 필요비·유익비 상환",
+    "law_name": "민법",
+    "article": "제626조",
+    "effective_date": null,
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "필요비",
+      "유익비",
+      "수리비",
+      "비용 상환",
+      "시설 개선",
+      "교체 비용",
+      "보수 비용"
+    ],
+    "core_keywords": [
+      "필요비",
+      "유익비",
+      "비용 상환"
+    ],
+    "content": "임차인이 임차물 보존을 위해 지출한 필요비는 상환을 청구할 수 있고, 유익비는 임대차 종료 시 현존하는 가치 증가 등 법정 요건에 따라 상환이 문제된다.",
+    "applicability": "비용 성격, 지출 증빙, 임대인의 동의·통지, 계약상 유효한 특약을 확인한다.",
+    "source_url": "https://www.law.go.kr/lsInfoP.do?lsId=001284"
+  },
+  {
+    "rule_id": "HOUSING_LAW_005",
+    "category": "HOUSING",
+    "title": "임차물 반환과 원상회복",
+    "law_name": "민법",
+    "article": "제654조 및 제615조",
+    "effective_date": null,
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "원상복구",
+      "원상회복",
+      "도배",
+      "장판",
+      "청소비",
+      "파손",
+      "훼손",
+      "퇴거 비용"
+    ],
+    "core_keywords": [
+      "원상복구",
+      "원상회복",
+      "도배",
+      "장판"
+    ],
+    "content": "임대차 종료 시 임차인의 원상회복 의무를 판단할 때 준용되는 조항이다. 통상적인 사용에 따른 마모와 임차인의 귀책 손상을 구별해야 한다.",
+    "applicability": "입주 당시 상태, 통상 손모, 훼손 원인, 특약의 구체성, 비용 산정 증거를 확인한다.",
+    "source_url": "https://www.law.go.kr/lsInfoP.do?lsId=001284"
+  },
+  {
+    "rule_id": "HOUSING_CASE_006",
+    "category": "HOUSING",
+    "title": "통상 손모의 원상회복 부담 판단",
+    "law_name": "서울중앙지방법원 판결",
+    "article": "2007. 5. 31. 선고 2005가합100279, 2006가합62053",
+    "effective_date": null,
+    "source_type": "CASE_LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "통상 손모",
+      "자연 마모",
+      "생활 흠집",
+      "원상복구",
+      "원상회복",
+      "도배",
+      "장판"
+    ],
+    "core_keywords": [
+      "통상 손모",
+      "자연 마모",
+      "원상복구"
+    ],
+    "content": "통상적인 사용으로 생기는 손모는 특별한 사정이나 명확한 특약이 없으면 원칙적으로 임대인이 부담한다는 취지의 하급심 판결이다. 대법원 확정 판례로 오인해서는 안 된다.",
+    "applicability": "하급심 판결로서 사안별 차이가 있고 특약이 구체적·명확하게 합의되었는지 확인한다.",
+    "source_url": "https://www.law.go.kr/precInfoP.do?mode=0&precSeq=147076"
+  },
+  {
+    "rule_id": "HOUSING_LAW_007",
+    "category": "HOUSING",
+    "title": "임차인에게 불리한 약정의 효력",
+    "law_name": "주택임대차보호법",
+    "article": "제10조",
+    "effective_date": null,
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "특약",
+      "권리 포기",
+      "임차인 불리",
+      "무효",
+      "보증금 포기",
+      "갱신 포기",
+      "해지 금지"
+    ],
+    "core_keywords": [
+      "특약",
+      "권리 포기",
+      "임차인 불리"
+    ],
+    "content": "주택임대차보호법의 규정에 위반된 약정으로서 임차인에게 불리한 것은 효력이 없다.",
+    "applicability": "주택임대차보호법의 구체적 강행규정 위반 여부를 먼저 확인한다. 단순히 임차인에게 불리하다는 이유만으로 모든 특약이 무효인 것은 아니다.",
+    "source_url": "https://www.law.go.kr/lsInfoP.do?lsId=001248"
+  },
+  {
+    "rule_id": "HOUSING_LAW_008",
+    "category": "HOUSING",
+    "title": "묵시적 갱신 후 임차인의 해지",
+    "law_name": "주택임대차보호법",
+    "article": "제6조의2",
+    "effective_date": null,
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "묵시적 갱신",
+      "자동 갱신",
+      "계약 연장",
+      "해지 통보",
+      "3개월",
+      "해지 제한"
+    ],
+    "core_keywords": [
+      "묵시적 갱신",
+      "자동 갱신",
+      "해지 통보"
+    ],
+    "content": "묵시적으로 갱신된 주택임대차에서 임차인은 언제든 해지를 통지할 수 있으며, 임대인이 통지를 받은 날부터 3개월 후 효력이 발생한다.",
+    "applicability": "묵시적 갱신 해당 여부, 통지 수령일, 갱신 방식(합의 갱신 여부)을 확인한다.",
+    "source_url": "https://www.law.go.kr/lsInfoP.do?lsId=001248"
+  },
+  {
+    "rule_id": "HOUSING_LAW_009",
+    "category": "HOUSING",
+    "title": "계약갱신요구권과 거절 사유",
+    "law_name": "주택임대차보호법",
+    "article": "제6조의3",
+    "effective_date": null,
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "계약갱신요구권",
+      "갱신 거절",
+      "계약 연장 거부",
+      "실거주",
+      "갱신 불가"
+    ],
+    "core_keywords": [
+      "계약갱신요구권",
+      "갱신 거절",
+      "실거주"
+    ],
+    "content": "법정 기간 내 계약갱신을 요구한 임차인에 대해 임대인은 법에 정한 정당한 거절 사유 없이 거절하지 못한다. 실제 거주 등 법정 거절 사유가 존재할 수 있다.",
+    "applicability": "요구 시기, 행사 횟수, 연체·무단전대·실거주 등 법정 거절 사유를 확인한다.",
+    "source_url": "https://www.law.go.kr/lsInfoP.do?lsId=001248"
+  },
+  {
+    "rule_id": "HOUSING_LAW_010",
+    "category": "HOUSING",
+    "title": "2년 미만 임대차기간과 임차인 선택권",
+    "law_name": "주택임대차보호법",
+    "article": "제4조 제1항",
+    "effective_date": null,
+    "source_type": "LAW",
+    "verification_status": "VERIFIED",
+    "keywords": [
+      "1년 계약",
+      "단기 임대차",
+      "임대차 기간",
+      "2년 미만",
+      "기간 단축"
+    ],
+    "core_keywords": [
+      "2년 미만",
+      "임대차 기간"
+    ],
+    "content": "기간을 정하지 않거나 2년 미만으로 정한 주택임대차는 원칙적으로 2년으로 보되, 임차인은 짧게 정한 기간의 유효함을 주장할 수 있다.",
+    "applicability": "주거용 임대차인지, 기간과 종료 의사, 임차인의 선택을 확인한다.",
+    "source_url": "https://www.law.go.kr/lsInfoP.do?lsId=001248"
+  }
+]
