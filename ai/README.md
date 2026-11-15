@@ -83,7 +83,6 @@ GEMINI_API_KEY=실제_Gemini_API_키
 $env:GEMINI_API_KEY="실제_Gemini_API_키"
 ```
 
-> API 키가 포함된 `.env` 파일은 Git에 올리지 않습니다.
 
 ### 3.3 AI 서버 실행
 
