@@ -1,0 +1,11 @@
+**
+!pom.xml
+!src/
+!src/main/
+!src/main/java/
+!src/main/java/**
+!src/main/resources/
+!src/main/resources/application.yml
+!src/main/resources/db/
+!src/main/resources/db/migration/
+!src/main/resources/db/migration/**

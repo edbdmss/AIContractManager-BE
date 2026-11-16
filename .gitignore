@@ -212,3 +212,6 @@ ai/.env
 ai/**/__pycache__/
 ai/masked_results/
 ai/contract_test_10/
+# Docker local credentials
+.env.docker
+.env.example
