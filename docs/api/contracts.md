@@ -11,9 +11,9 @@ All endpoints require `Authorization: Bearer <access-token>`. Contract ownership
 | POST | `/api/aicontract/contracts/{id}/verify-amount` | Confirm the saved monthly amount |
 | DELETE | `/api/aicontract/contracts/{id}` | Soft-delete a contract (204) |
 
-Create and PUT use the same body. `title` and `category` are required. Optional fields are `providerName`, `contractStartDate`, `contractEndDate`, `nextPaymentDate`, `cancellationDeadline`, `monthlyAmount`, `penaltyAmount`, `cancellationTerms`, and `plainSummary`. Date-only values use `YYYY-MM-DD`; amounts are nonnegative decimal values. PUT replaces all editable fields, so omitted optional fields become `null`.
+Create and PUT use the same body. `title` and `category` are required. For manually registered non-subscription contracts, `contractStartDate` and `nextPaymentDate` are required. Subscriptions require `nextPaymentDate` but do not require `contractStartDate`. `contractEndDate` and `cancellationDeadline` are optional. Other optional fields are `providerName`, `monthlyAmount`, `penaltyAmount`, `cancellationTerms`, and `plainSummary`. Date-only values use `YYYY-MM-DD`; amounts are nonnegative decimal values. PUT replaces all editable fields, so omitted optional fields become `null`.
 
-For category `SUBSCRIPTION`, `monthlyAmount` and `nextPaymentDate` are required. User-entered subscriptions are immediately active and included in dashboard expenses. The backend schedules a reminder for 09:00 three days before `nextPaymentDate`. After the payment date passes, a daily Korea-time job advances it to the next monthly date and creates the next reminder while the contract remains active. Cancelling or deleting the subscription stops future reminders. The original day of month is retained when a month is shorter (for example, a day-31 subscription moves to the last day of February and returns to day 31 in March). Other categories use the amount confirmation flow below.
+For category `SUBSCRIPTION`, `monthlyAmount` and `nextPaymentDate` are required. User-entered subscriptions are immediately active and included in dashboard expenses. The backend schedules a reminder for 09:00 three days before `nextPaymentDate`. After the payment date passes, a daily Korea-time job advances it to the next monthly date and creates the next reminder while the contract remains active. Cancelling or deleting the subscription stops future reminders. The original day of month is retained when a month is shorter (for example, a day-31 subscription moves to the last day of February and returns to day 31 in March). Other manually registered categories require both `contractStartDate` and `nextPaymentDate` and use the amount confirmation flow below. Incomplete document-import records are exempt while they await AI analysis.
 
 Example create body:
 
@@ -24,7 +24,7 @@ Example create body:
   "providerName": "동네 헬스장",
   "contractStartDate": "2026-11-01",
   "contractEndDate": "2027-10-31",
-  "nextPaymentDate": null,
+  "nextPaymentDate": "2026-12-01",
   "monthlyAmount": 50000
 }
 ```
@@ -33,4 +33,4 @@ All API date-time values (for example `createdAt`, `scheduledAt`, and `sentAt`) 
 
 New non-subscription contracts have `PENDING_VERIFICATION` status and `amountVerified=false`. To confirm the saved amount, send `{"monthlyAmount":50000}` to the verification endpoint. A changed monthly amount resets verification. Missing or non-owned contracts return 404.
 
-`monthlyAmount` is required for creation/update and must be a nonnegative integer KRW value. `nextPaymentDate` is required for SUBSCRIPTION. DB columns: `contracts.next_payment_date` (V8) and `contracts.payment_day_of_month` (V9 recurrence anchor).
+`monthlyAmount` is required for creation/update and must be a nonnegative integer KRW value. DB columns: `contracts.next_payment_date` (V8), `contracts.payment_day_of_month` (V9 recurrence anchor), and `contracts.registration_mode` (V10 manual/document date constraint).

@@ -33,15 +33,23 @@ public class ContractRepository {
                 rowMapper, id.toString(), userId.toString()).stream().findFirst();
     }
 
+    public boolean isDocumentRegistration(UUID id, UUID userId) {
+        Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM contracts WHERE id = ? AND user_id = ? AND registration_mode = 'DOCUMENT'",
+                Integer.class, id.toString(), userId.toString());
+        return count != null && count > 0;
+    }
+
     public void create(UUID id, UUID userId, ContractRequest request) {
         jdbc.update("""
-                INSERT INTO contracts (id, user_id, title, category, provider_name, status, source_type, amount_verified,
+                INSERT INTO contracts (id, user_id, title, category, provider_name, status, source_type, registration_mode, amount_verified,
                     contract_start_date, contract_end_date, next_payment_date, payment_day_of_month, cancellation_deadline,
                     monthly_amount, penalty_amount, cancellation_terms, plain_summary)
                 VALUES (?, ?, ?, ?, ?, CASE WHEN ? THEN 'ACTIVE' ELSE 'PENDING_VERIFICATION' END,
-                    'MANUAL', ?, ?, ?, ?, CASE WHEN ? THEN DAY(?) ELSE NULL END, ?, ?, ?, ?, ?)
+                    'MANUAL', CASE WHEN UPPER(?) = 'UNCLASSIFIED' THEN 'DOCUMENT' ELSE 'MANUAL' END,
+                    ?, ?, ?, ?, CASE WHEN ? THEN DAY(?) ELSE NULL END, ?, ?, ?, ?, ?)
                 """, id.toString(), userId.toString(), request.title(), request.category(), request.providerName(),
-                isSubscription(request), isSubscription(request), request.contractStartDate(), request.contractEndDate(), request.nextPaymentDate(),
+                isSubscription(request), request.category(), isSubscription(request), request.contractStartDate(), request.contractEndDate(), request.nextPaymentDate(),
                 isSubscription(request), request.nextPaymentDate(), request.cancellationDeadline(), request.monthlyAmount(), request.penaltyAmount(),
                 request.cancellationTerms(), request.plainSummary());
         syncSchedules(id, userId);
