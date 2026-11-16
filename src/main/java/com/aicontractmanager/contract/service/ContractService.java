@@ -11,6 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import java.time.YearMonth;
 
 @Service
 public class ContractService {
@@ -23,6 +24,27 @@ public class ContractService {
 
     public List<Contract> list(UUID userId) {
         return repository.findAll(userId);
+    }
+
+    @Transactional
+    public int rollForwardDueSubscriptionPayments(java.time.LocalDate today) {
+        int updated = 0;
+        for (ContractRepository.DueSubscriptionPayment due : repository.findDueSubscriptionPayments(today)) {
+            int billingDay = due.paymentDayOfMonth() == null
+                    ? due.nextPaymentDate().getDayOfMonth()
+                    : due.paymentDayOfMonth();
+            java.time.LocalDate nextPaymentDate = due.nextPaymentDate();
+            do {
+                YearMonth nextMonth = YearMonth.from(nextPaymentDate).plusMonths(1);
+                nextPaymentDate = nextMonth.atDay(Math.min(billingDay, nextMonth.lengthOfMonth()));
+            } while (!nextPaymentDate.isAfter(today));
+
+            if (repository.advanceSubscriptionPayment(due, nextPaymentDate) == 1) {
+                repository.refreshSchedulesAfterPaymentRollover(due.id(), due.userId());
+                updated++;
+            }
+        }
+        return updated;
     }
 
     public Contract get(UUID userId, UUID id) {

@@ -179,7 +179,7 @@ ai/
 
 - `contractStartDate`: 계약 시작일
 - `contractEndDate`: 계약 종료일
-- `autoRenewalDate`: 자동 갱신일
+- `nextPaymentDate`: 구독 다음 결제일 또는 계약 자동 갱신일
 - `cancellationDeadline`: 해지 신청 마감일
 
 **계약 금액 및 요약**
@@ -198,7 +198,7 @@ ai/
   "providerName": "ABC 피트니스",
   "contractStartDate": "2026-11-01",
   "contractEndDate": "2027-10-31",
-  "autoRenewalDate": null,
+  "nextPaymentDate": null,
   "cancellationDeadline": null,
   "monthlyAmount": 50000,
   "penaltyAmount": null,
@@ -227,7 +227,7 @@ ai/
 
 - `title`, `category`, `providerName` → 계약서 기본 정보
 - `contractStartDate`, `contractEndDate` → 계약 기간
-- `autoRenewalDate`, `cancellationDeadline` → 갱신·해지 일정
+- `nextPaymentDate`, `cancellationDeadline` → 결제·갱신·해지 일정
 - `monthlyAmount`, `penaltyAmount` → 납부 금액·위약금
 - `cancellationTerms` → 해지 조건
 - `plainSummary` → **AI 계약서 핵심 요약**

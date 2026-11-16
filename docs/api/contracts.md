@@ -13,7 +13,7 @@ All endpoints require `Authorization: Bearer <access-token>`. Contract ownership
 
 Create and PUT use the same body. `title` and `category` are required. Optional fields are `providerName`, `contractStartDate`, `contractEndDate`, `nextPaymentDate`, `cancellationDeadline`, `monthlyAmount`, `penaltyAmount`, `cancellationTerms`, and `plainSummary`. Date-only values use `YYYY-MM-DD`; amounts are nonnegative decimal values. PUT replaces all editable fields, so omitted optional fields become `null`.
 
-For category `SUBSCRIPTION`, `monthlyAmount` and `nextPaymentDate` are required. User-entered subscriptions are immediately active and included in dashboard expenses; the date creates a `PAYMENT` calendar event and reminder. Other categories use the amount confirmation flow below.
+For category `SUBSCRIPTION`, `monthlyAmount` and `nextPaymentDate` are required. User-entered subscriptions are immediately active and included in dashboard expenses. The backend schedules a reminder for 09:00 three days before `nextPaymentDate`. After the payment date passes, a daily Korea-time job advances it to the next monthly date and creates the next reminder while the contract remains active. Cancelling or deleting the subscription stops future reminders. The original day of month is retained when a month is shorter (for example, a day-31 subscription moves to the last day of February and returns to day 31 in March). Other categories use the amount confirmation flow below.
 
 Example create body:
 
@@ -33,4 +33,4 @@ All API date-time values (for example `createdAt`, `scheduledAt`, and `sentAt`) 
 
 New non-subscription contracts have `PENDING_VERIFICATION` status and `amountVerified=false`. To confirm the saved amount, send `{"monthlyAmount":50000}` to the verification endpoint. A changed monthly amount resets verification. Missing or non-owned contracts return 404.
 
-`monthlyAmount` is required for creation/update and must be a nonnegative integer KRW value. `nextPaymentDate` is required for SUBSCRIPTION. DB column: `contracts.next_payment_date` (V8).
+`monthlyAmount` is required for creation/update and must be a nonnegative integer KRW value. `nextPaymentDate` is required for SUBSCRIPTION. DB columns: `contracts.next_payment_date` (V8) and `contracts.payment_day_of_month` (V9 recurrence anchor).
