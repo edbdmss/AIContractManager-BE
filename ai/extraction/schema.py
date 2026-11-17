@@ -15,7 +15,7 @@ class ContractExtraction(BaseModel):
 
     contractStartDate: date | None = None
     contractEndDate: date | None = None
-    autoRenewalDate: date | None = None
+    nextPaymentDate: date | None = None
     cancellationDeadline: date | None = None
 
     monthlyAmount: Decimal | None = Field(default=None, ge=0)

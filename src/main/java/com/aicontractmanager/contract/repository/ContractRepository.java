@@ -33,16 +33,24 @@ public class ContractRepository {
                 rowMapper, id.toString(), userId.toString()).stream().findFirst();
     }
 
+    public boolean isDocumentRegistration(UUID id, UUID userId) {
+        Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM contracts WHERE id = ? AND user_id = ? AND registration_mode = 'DOCUMENT'",
+                Integer.class, id.toString(), userId.toString());
+        return count != null && count > 0;
+    }
+
     public void create(UUID id, UUID userId, ContractRequest request) {
         jdbc.update("""
-                INSERT INTO contracts (id, user_id, title, category, provider_name, status, source_type, amount_verified,
-                    contract_start_date, contract_end_date, next_payment_date, cancellation_deadline,
+                INSERT INTO contracts (id, user_id, title, category, provider_name, status, source_type, registration_mode, amount_verified,
+                    contract_start_date, contract_end_date, next_payment_date, payment_day_of_month, cancellation_deadline,
                     monthly_amount, penalty_amount, cancellation_terms, plain_summary)
                 VALUES (?, ?, ?, ?, ?, CASE WHEN ? THEN 'ACTIVE' ELSE 'PENDING_VERIFICATION' END,
-                    'MANUAL', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    'MANUAL', CASE WHEN UPPER(?) = 'UNCLASSIFIED' THEN 'DOCUMENT' ELSE 'MANUAL' END,
+                    ?, ?, ?, ?, CASE WHEN ? THEN DAY(?) ELSE NULL END, ?, ?, ?, ?, ?)
                 """, id.toString(), userId.toString(), request.title(), request.category(), request.providerName(),
-                isSubscription(request), isSubscription(request), request.contractStartDate(), request.contractEndDate(), request.nextPaymentDate(),
-                request.cancellationDeadline(), request.monthlyAmount(), request.penaltyAmount(),
+                isSubscription(request), request.category(), isSubscription(request), request.contractStartDate(), request.contractEndDate(), request.nextPaymentDate(),
+                isSubscription(request), request.nextPaymentDate(), request.cancellationDeadline(), request.monthlyAmount(), request.penaltyAmount(),
                 request.cancellationTerms(), request.plainSummary());
         syncSchedules(id, userId);
     }
@@ -50,17 +58,52 @@ public class ContractRepository {
     public void update(UUID id, UUID userId, ContractRequest request, boolean resetAmountVerification) {
         jdbc.update("""
                 UPDATE contracts SET title = ?, category = ?, provider_name = ?, contract_start_date = ?,
-                    contract_end_date = ?, next_payment_date = ?, cancellation_deadline = ?, monthly_amount = ?,
+                    contract_end_date = ?,
+                    payment_day_of_month = CASE WHEN ? THEN
+                        CASE WHEN next_payment_date <=> ? THEN payment_day_of_month ELSE DAY(?) END
+                        ELSE NULL END,
+                    next_payment_date = ?, cancellation_deadline = ?, monthly_amount = ?,
                     penalty_amount = ?, cancellation_terms = ?, plain_summary = ?,
                     amount_verified = CASE WHEN ? THEN TRUE WHEN ? THEN FALSE ELSE amount_verified END,
                     status = CASE WHEN status IN ('CANCELLED','EXPIRED') THEN status WHEN ? THEN 'ACTIVE' WHEN ? THEN 'PENDING_VERIFICATION' ELSE status END
                 WHERE id = ? AND user_id = ? AND deleted_at IS NULL
                 """, request.title(), request.category(), request.providerName(), request.contractStartDate(),
-                request.contractEndDate(), request.nextPaymentDate(), request.cancellationDeadline(),
+                request.contractEndDate(), isSubscription(request), request.nextPaymentDate(), request.nextPaymentDate(),
+                request.nextPaymentDate(), request.cancellationDeadline(),
                 request.monthlyAmount(), request.penaltyAmount(), request.cancellationTerms(), request.plainSummary(),
                 isSubscription(request), resetAmountVerification, isSubscription(request), resetAmountVerification,
                 id.toString(), userId.toString());
         syncSchedules(id, userId);
+    }
+
+    public List<DueSubscriptionPayment> findDueSubscriptionPayments(LocalDate asOfDate) {
+        return jdbc.query("""
+                SELECT id, user_id, next_payment_date, payment_day_of_month
+                FROM contracts
+                WHERE category = 'SUBSCRIPTION' AND status = 'ACTIVE'
+                  AND deleted_at IS NULL AND next_payment_date < ?
+                ORDER BY next_payment_date
+                FOR UPDATE SKIP LOCKED
+                """, (rs, rowNum) -> {
+            int paymentDay = rs.getInt("payment_day_of_month");
+            Integer paymentDayOfMonth = rs.wasNull() ? null : paymentDay;
+            return new DueSubscriptionPayment(UUID.fromString(rs.getString("id")),
+                    UUID.fromString(rs.getString("user_id")),
+                    rs.getObject("next_payment_date", LocalDate.class),
+                    paymentDayOfMonth);
+        }, asOfDate);
+    }
+
+    public int advanceSubscriptionPayment(DueSubscriptionPayment due, LocalDate nextPaymentDate) {
+        return jdbc.update("""
+                UPDATE contracts SET next_payment_date = ?
+                WHERE id = ? AND user_id = ? AND category = 'SUBSCRIPTION' AND status = 'ACTIVE'
+                  AND deleted_at IS NULL AND next_payment_date = ?
+                """, nextPaymentDate, due.id().toString(), due.userId().toString(), due.nextPaymentDate());
+    }
+
+    public void refreshSchedulesAfterPaymentRollover(UUID contractId, UUID userId) {
+        syncSchedules(contractId, userId);
     }
 
     public void verifyAmount(UUID id, UUID userId) {
@@ -134,5 +177,8 @@ public class ContractRepository {
                 rs.getBigDecimal("monthly_amount"), rs.getString("currency"),
                 rs.getBigDecimal("penalty_amount"), rs.getString("cancellation_terms"),
                 rs.getString("plain_summary"), rs.getBoolean("amount_verified"));
+    }
+
+    public record DueSubscriptionPayment(UUID id, UUID userId, LocalDate nextPaymentDate, Integer paymentDayOfMonth) {
     }
 }

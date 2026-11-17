@@ -2,6 +2,11 @@
 !requirements.txt
 !main.py
 !extraction/
-!extraction/*.py
+!extraction/**
 !masking/
-!masking/*.py
+!masking/**
+!rag/
+!rag/**
+!data/
+!data/legal/
+!data/legal/**

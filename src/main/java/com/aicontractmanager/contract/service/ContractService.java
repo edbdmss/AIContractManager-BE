@@ -11,6 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import java.time.YearMonth;
 
 @Service
 public class ContractService {
@@ -25,6 +26,27 @@ public class ContractService {
         return repository.findAll(userId);
     }
 
+    @Transactional
+    public int rollForwardDueSubscriptionPayments(java.time.LocalDate today) {
+        int updated = 0;
+        for (ContractRepository.DueSubscriptionPayment due : repository.findDueSubscriptionPayments(today)) {
+            int billingDay = due.paymentDayOfMonth() == null
+                    ? due.nextPaymentDate().getDayOfMonth()
+                    : due.paymentDayOfMonth();
+            java.time.LocalDate nextPaymentDate = due.nextPaymentDate();
+            do {
+                YearMonth nextMonth = YearMonth.from(nextPaymentDate).plusMonths(1);
+                nextPaymentDate = nextMonth.atDay(Math.min(billingDay, nextMonth.lengthOfMonth()));
+            } while (!nextPaymentDate.isAfter(today));
+
+            if (repository.advanceSubscriptionPayment(due, nextPaymentDate) == 1) {
+                repository.refreshSchedulesAfterPaymentRollover(due.id(), due.userId());
+                updated++;
+            }
+        }
+        return updated;
+    }
+
     public Contract get(UUID userId, UUID id) {
         return repository.findOwned(id, userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "계약을 찾을 수 없습니다."));
@@ -32,7 +54,7 @@ public class ContractService {
 
     @Transactional
     public Contract create(UUID userId, ContractRequest request) {
-        validateDates(request);
+        validateDates(request, false);
         UUID id = UUID.randomUUID();
         repository.create(id, userId, request);
         return get(userId, id);
@@ -40,8 +62,8 @@ public class ContractService {
 
     @Transactional
     public Contract update(UUID userId, UUID id, ContractRequest request) {
-        validateDates(request);
         Contract existing = get(userId, id);
+        validateDates(request, repository.isDocumentRegistration(id, userId));
         boolean amountChanged = !equalAmount(existing.monthlyAmount(), request.monthlyAmount());
         repository.update(id, userId, request, amountChanged);
         return get(userId, id);
@@ -70,12 +92,23 @@ public class ContractService {
         return get(userId, id);
     }
 
-    private void validateDates(ContractRequest request) {
+    private void validateDates(ContractRequest request, boolean documentRegistration) {
         if (request.contractStartDate() != null && request.contractEndDate() != null
                 && request.contractEndDate().isBefore(request.contractStartDate())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "계약 종료일은 시작일보다 빠를 수 없습니다.");
         }
-        if ("SUBSCRIPTION".equalsIgnoreCase(request.category())
+        boolean incompleteDocument = "UNCLASSIFIED".equalsIgnoreCase(request.category());
+        if (!documentRegistration && !incompleteDocument) {
+            if (request.nextPaymentDate() == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "다음 결제일을 입력해 주세요.");
+            }
+            if (!"SUBSCRIPTION".equalsIgnoreCase(request.category())
+                    && request.contractStartDate() == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "계약 시작일을 입력해 주세요.");
+            }
+        }
+        if (!documentRegistration && !incompleteDocument
+                && "SUBSCRIPTION".equalsIgnoreCase(request.category())
                 && (request.monthlyAmount() == null || request.nextPaymentDate() == null)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "구독은 월 금액과 다음 결제일을 입력해야 합니다.");
