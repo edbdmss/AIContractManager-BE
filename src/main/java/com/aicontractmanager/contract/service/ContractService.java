@@ -35,9 +35,11 @@ public class ContractService {
                     : due.paymentDayOfMonth();
             java.time.LocalDate nextPaymentDate = due.nextPaymentDate();
             do {
-                YearMonth nextMonth = YearMonth.from(nextPaymentDate).plusMonths(1);
+                YearMonth nextMonth = YearMonth.from(nextPaymentDate).plusMonths(due.renewalCycleMonths());
                 nextPaymentDate = nextMonth.atDay(Math.min(billingDay, nextMonth.lengthOfMonth()));
-            } while (!nextPaymentDate.isAfter(today));
+            } while (nextPaymentDate.isBefore(today));
+
+            if (due.contractEndDate() != null && nextPaymentDate.isAfter(due.contractEndDate())) continue;
 
             if (repository.advanceSubscriptionPayment(due, nextPaymentDate) == 1) {
                 repository.refreshSchedulesAfterPaymentRollover(due.id(), due.userId());
@@ -56,7 +58,7 @@ public class ContractService {
     public Contract create(UUID userId, ContractRequest request) {
         validateDates(request, false);
         UUID id = UUID.randomUUID();
-        repository.create(id, userId, request);
+        repository.create(id, userId, normalized(request, null));
         return get(userId, id);
     }
 
@@ -65,7 +67,7 @@ public class ContractService {
         Contract existing = get(userId, id);
         validateDates(request, repository.isDocumentRegistration(id, userId));
         boolean amountChanged = !equalAmount(existing.monthlyAmount(), request.monthlyAmount());
-        repository.update(id, userId, request, amountChanged);
+        repository.update(id, userId, normalized(request, existing), amountChanged);
         return get(userId, id);
     }
 
@@ -90,6 +92,26 @@ public class ContractService {
         get(userId, id);
         repository.cancel(id, userId);
         return get(userId, id);
+    }
+
+    public List<Contract> attention(UUID userId) {
+        var today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul"));
+        return repository.findAttention(userId, today, today.plusDays(7));
+    }
+
+    private ContractRequest normalized(ContractRequest request, Contract existing) {
+        Integer cycle = request.renewalCycleMonths();
+        if (cycle == null && existing != null) cycle = existing.renewalCycleMonths();
+        boolean verified = request.amountVerified() != null ? request.amountVerified()
+                : existing != null && existing.amountVerified()
+                  && equalAmount(existing.monthlyAmount(), request.monthlyAmount());
+        if (verified && request.monthlyAmount() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "확인할 금액이 필요합니다.");
+        }
+        return new ContractRequest(request.title(), request.category(), request.providerName(),
+                request.contractStartDate(), request.contractEndDate(), request.nextPaymentDate(),
+                request.cancellationDeadline(), request.monthlyAmount(), request.penaltyAmount(),
+                request.cancellationTerms(), request.plainSummary(), cycle, verified);
     }
 
     private void validateDates(ContractRequest request, boolean documentRegistration) {

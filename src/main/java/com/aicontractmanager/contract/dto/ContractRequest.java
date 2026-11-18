@@ -18,6 +18,8 @@ public record ContractRequest(
         @jakarta.validation.constraints.NotNull(message="금액을 입력해 주세요.") @DecimalMin("0.00") @jakarta.validation.constraints.Digits(integer=13, fraction=0) BigDecimal monthlyAmount,
         @DecimalMin("0.00") @jakarta.validation.constraints.Digits(integer=13, fraction=0) BigDecimal penaltyAmount,
         String cancellationTerms,
-        String plainSummary
+        String plainSummary,
+        @jakarta.validation.constraints.Min(1) @jakarta.validation.constraints.Max(60) Integer renewalCycleMonths,
+        Boolean amountVerified
 ) {
 }

@@ -77,13 +77,13 @@ class ContractServiceTest {
     }
 
     private ContractRequest request(BigDecimal amount, LocalDate start, LocalDate end) {
-        return new ContractRequest("헬스장", "FITNESS", "상호", start, end,
-                null, null, amount, null, null, null);
+        return new ContractRequest("헬스장", "FITNESS", "상호", start == null ? LocalDate.now() : start, end,
+                LocalDate.now().plusMonths(1), null, amount, null, null, null, null, null);
     }
 
     private Contract contract(BigDecimal amount) {
         return new Contract(contractId, userId, "헬스장", "FITNESS", "상호",
                 "ACTIVE", "MANUAL", null, null, null, null, amount,
-                "KRW", null, null, null, true);
+                "KRW", null, null, null, true, null);
     }
 }

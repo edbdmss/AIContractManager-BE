@@ -21,6 +21,7 @@ public record Contract(
         BigDecimal penaltyAmount,
         String cancellationTerms,
         String plainSummary,
-        boolean amountVerified
+        boolean amountVerified,
+        Integer renewalCycleMonths
 ) {
 }

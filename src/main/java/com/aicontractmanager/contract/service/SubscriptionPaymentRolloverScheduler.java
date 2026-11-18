@@ -23,7 +23,7 @@ public class SubscriptionPaymentRolloverScheduler {
     public void rollForwardDuePayments() {
         int updated = contracts.rollForwardDueSubscriptionPayments(LocalDate.now(KOREA_ZONE));
         if (updated > 0) {
-            log.info("구독 다음 결제일 자동 갱신 완료: {}건", updated);
+            log.info("계약 다음 결제·갱신 예정일 자동 갱신 완료: {}건", updated);
         }
     }
 }
