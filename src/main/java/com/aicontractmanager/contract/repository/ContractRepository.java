@@ -28,39 +28,93 @@ public class ContractRepository {
                 rowMapper, userId.toString());
     }
 
+    public List<Contract> findAttention(UUID userId, LocalDate from, LocalDate through) {
+        return jdbc.query("""
+                SELECT * FROM contracts
+                WHERE user_id = ? AND deleted_at IS NULL
+                  AND status IN ('ACTIVE', 'PENDING_VERIFICATION')
+                  AND contract_end_date BETWEEN ? AND ?
+                ORDER BY contract_end_date, created_at DESC, id
+                """, rowMapper, userId.toString(), from, through);
+    }
+
     public Optional<Contract> findOwned(UUID id, UUID userId) {
         return jdbc.query("SELECT * FROM contracts WHERE id = ? AND user_id = ? AND deleted_at IS NULL",
                 rowMapper, id.toString(), userId.toString()).stream().findFirst();
     }
 
+    public boolean isDocumentRegistration(UUID id, UUID userId) {
+        Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM contracts WHERE id = ? AND user_id = ? AND registration_mode = 'DOCUMENT'",
+                Integer.class, id.toString(), userId.toString());
+        return count != null && count > 0;
+    }
+
     public void create(UUID id, UUID userId, ContractRequest request) {
         jdbc.update("""
-                INSERT INTO contracts (id, user_id, title, category, provider_name, status, source_type, amount_verified,
-                    contract_start_date, contract_end_date, next_payment_date, cancellation_deadline,
-                    monthly_amount, penalty_amount, cancellation_terms, plain_summary)
+                INSERT INTO contracts (id, user_id, title, category, provider_name, status, source_type, registration_mode, amount_verified,
+                    contract_start_date, contract_end_date, next_payment_date, payment_day_of_month, cancellation_deadline,
+                    monthly_amount, penalty_amount, cancellation_terms, plain_summary, renewal_cycle_months)
                 VALUES (?, ?, ?, ?, ?, CASE WHEN ? THEN 'ACTIVE' ELSE 'PENDING_VERIFICATION' END,
-                    'MANUAL', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    'MANUAL', CASE WHEN UPPER(?) = 'UNCLASSIFIED' THEN 'DOCUMENT' ELSE 'MANUAL' END,
+                    ?, ?, ?, ?, CASE WHEN ? THEN DAY(?) ELSE NULL END, ?, ?, ?, ?, ?, ?)
                 """, id.toString(), userId.toString(), request.title(), request.category(), request.providerName(),
-                isSubscription(request), isSubscription(request), request.contractStartDate(), request.contractEndDate(), request.nextPaymentDate(),
-                request.cancellationDeadline(), request.monthlyAmount(), request.penaltyAmount(),
-                request.cancellationTerms(), request.plainSummary());
+                Boolean.TRUE.equals(request.amountVerified()), request.category(), Boolean.TRUE.equals(request.amountVerified()), request.contractStartDate(), request.contractEndDate(), request.nextPaymentDate(),
+                request.renewalCycleMonths() != null, request.nextPaymentDate(), request.cancellationDeadline(), request.monthlyAmount(), request.penaltyAmount(),
+                request.cancellationTerms(), request.plainSummary(), request.renewalCycleMonths());
         syncSchedules(id, userId);
     }
 
     public void update(UUID id, UUID userId, ContractRequest request, boolean resetAmountVerification) {
         jdbc.update("""
                 UPDATE contracts SET title = ?, category = ?, provider_name = ?, contract_start_date = ?,
-                    contract_end_date = ?, next_payment_date = ?, cancellation_deadline = ?, monthly_amount = ?,
-                    penalty_amount = ?, cancellation_terms = ?, plain_summary = ?,
-                    amount_verified = CASE WHEN ? THEN TRUE WHEN ? THEN FALSE ELSE amount_verified END,
-                    status = CASE WHEN status IN ('CANCELLED','EXPIRED') THEN status WHEN ? THEN 'ACTIVE' WHEN ? THEN 'PENDING_VERIFICATION' ELSE status END
+                    contract_end_date = ?,
+                    payment_day_of_month = CASE WHEN ? THEN
+                        CASE WHEN next_payment_date <=> ? THEN COALESCE(payment_day_of_month, DAY(?)) ELSE DAY(?) END
+                        ELSE NULL END,
+                    next_payment_date = ?, cancellation_deadline = ?, monthly_amount = ?,
+                    penalty_amount = ?, cancellation_terms = ?, plain_summary = ?, renewal_cycle_months = ?,
+                    amount_verified = ?,
+                    status = CASE WHEN status IN ('CANCELLED','EXPIRED') THEN status WHEN ? THEN 'ACTIVE' ELSE 'PENDING_VERIFICATION' END
                 WHERE id = ? AND user_id = ? AND deleted_at IS NULL
                 """, request.title(), request.category(), request.providerName(), request.contractStartDate(),
-                request.contractEndDate(), request.nextPaymentDate(), request.cancellationDeadline(),
-                request.monthlyAmount(), request.penaltyAmount(), request.cancellationTerms(), request.plainSummary(),
-                isSubscription(request), resetAmountVerification, isSubscription(request), resetAmountVerification,
+                request.contractEndDate(), request.renewalCycleMonths() != null, request.nextPaymentDate(), request.nextPaymentDate(), request.nextPaymentDate(),
+                request.nextPaymentDate(), request.cancellationDeadline(),
+                request.monthlyAmount(), request.penaltyAmount(), request.cancellationTerms(), request.plainSummary(), request.renewalCycleMonths(),
+                Boolean.TRUE.equals(request.amountVerified()), Boolean.TRUE.equals(request.amountVerified()),
                 id.toString(), userId.toString());
         syncSchedules(id, userId);
+    }
+
+    public List<DueSubscriptionPayment> findDueSubscriptionPayments(LocalDate asOfDate) {
+        return jdbc.query("""
+                SELECT id, user_id, next_payment_date, payment_day_of_month, renewal_cycle_months, contract_end_date
+                FROM contracts
+                WHERE renewal_cycle_months IS NOT NULL AND status = 'ACTIVE'
+                  AND deleted_at IS NULL AND next_payment_date < ?
+                  AND (contract_end_date IS NULL OR contract_end_date >= ?)
+                ORDER BY next_payment_date
+                FOR UPDATE SKIP LOCKED
+                """, (rs, rowNum) -> {
+            int paymentDay = rs.getInt("payment_day_of_month");
+            Integer paymentDayOfMonth = rs.wasNull() ? null : paymentDay;
+            return new DueSubscriptionPayment(UUID.fromString(rs.getString("id")),
+                    UUID.fromString(rs.getString("user_id")),
+                    rs.getObject("next_payment_date", LocalDate.class),
+                    paymentDayOfMonth, rs.getInt("renewal_cycle_months"), rs.getObject("contract_end_date", LocalDate.class));
+        }, asOfDate, asOfDate);
+    }
+
+    public int advanceSubscriptionPayment(DueSubscriptionPayment due, LocalDate nextPaymentDate) {
+        return jdbc.update("""
+                UPDATE contracts SET next_payment_date = ?
+                WHERE id = ? AND user_id = ? AND renewal_cycle_months IS NOT NULL AND status = 'ACTIVE'
+                  AND deleted_at IS NULL AND next_payment_date = ?
+                """, nextPaymentDate, due.id().toString(), due.userId().toString(), due.nextPaymentDate());
+    }
+
+    public void refreshSchedulesAfterPaymentRollover(UUID contractId, UUID userId) {
+        syncSchedules(contractId, userId);
     }
 
     public void verifyAmount(UUID id, UUID userId) {
@@ -118,10 +172,6 @@ public class ContractRepository {
                 date + "까지 계약 내용을 확인해 주세요.",date.minusDays(3).atTime(9,0));
     }
 
-    private boolean isSubscription(ContractRequest request) {
-        return "SUBSCRIPTION".equalsIgnoreCase(request.category());
-    }
-
     private Contract map(ResultSet rs, int rowNum) throws SQLException {
         return new Contract(
                 UUID.fromString(rs.getString("id")), UUID.fromString(rs.getString("user_id")),
@@ -133,6 +183,10 @@ public class ContractRepository {
                 rs.getObject("cancellation_deadline", LocalDate.class),
                 rs.getBigDecimal("monthly_amount"), rs.getString("currency"),
                 rs.getBigDecimal("penalty_amount"), rs.getString("cancellation_terms"),
-                rs.getString("plain_summary"), rs.getBoolean("amount_verified"));
+                rs.getString("plain_summary"), rs.getBoolean("amount_verified"),
+                rs.getObject("renewal_cycle_months", Integer.class));
+    }
+
+    public record DueSubscriptionPayment(UUID id, UUID userId, LocalDate nextPaymentDate, Integer paymentDayOfMonth, int renewalCycleMonths, LocalDate contractEndDate) {
     }
 }

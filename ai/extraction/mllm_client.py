@@ -12,16 +12,15 @@ from dotenv import load_dotenv
 from extraction.schema import ContractExtraction
 
 
-# AI 서버 디렉터리의 .env를 우선 사용합니다.
-# 이 파일은 .gitignore에 포함되어 있어 API 키가 저장소에 올라가지 않습니다.
-load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+# BE 레포 최상위 .env를 읽습니다. Docker에서는 Compose가 환경변수를 전달합니다.
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 
 def gemini_api_key() -> str:
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError(
-            "GEMINI_API_KEY가 설정되지 않았습니다. ai/.env에 설정하세요."
+            "GEMINI_API_KEY가 설정되지 않았습니다. BE 레포 최상위 .env에 설정하세요."
         )
     return api_key
 
@@ -36,7 +35,7 @@ PROMPT = """
 - providerName: 계약 상대 업체명
 - contractStartDate: 계약 시작일
 - contractEndDate: 계약 종료일
-- autoRenewalDate: 자동 갱신일
+- nextPaymentDate: 다음 결제일 또는 자동 갱신일
 - cancellationDeadline: 해지 신청 마감일
 - monthlyAmount: 월 납부 금액 (원)
 - penaltyAmount: 명시된 위약금 (원)
@@ -48,7 +47,7 @@ PROMPT = """
 2. 날짜는 YYYY-MM-DD 형식으로 작성한다.
 3. 금액은 숫자로 작성하며 원, 쉼표를 포함하지 않는다.
 4. 위약금이 명시되지 않았다면 0이 아니라 null이다.
-5. 자동 갱신 조건만 있고 정확한 날짜가 없다면 autoRenewalDate는 null이다.
+5. 자동 갱신 조건만 있고 정확한 날짜가 없다면 nextPaymentDate는 null이다.
 6. title과 category는 필수이며, 제목이 명확하지 않으면 문서 유형을 바탕으로
    일반적인 제목을 생성한다.
 7. JSON 객체만 반환한다.

@@ -125,7 +125,8 @@ public class AiAnalysisService {
                 amount(fields, existing.monthlyAmount(), "monthlyAmount", "monthly_amount", "subscriptionAmount"),
                 amount(fields, existing.penaltyAmount(), "penaltyAmount", "penalty_amount"),
                 text(fields, existing.cancellationTerms(), "cancellationTerms", "cancellation_terms", "terminationTerms"),
-                text(fields, existing.plainSummary(), "plainSummary", "plain_summary", "summary")
+                text(fields, existing.plainSummary(), "plainSummary", "plain_summary", "summary"),
+                existing.renewalCycleMonths(), null
         );
         contracts.update(userId, contractId, request);
     }

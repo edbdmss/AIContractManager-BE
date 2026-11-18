@@ -12,6 +12,9 @@ public record ContractScheduleRequest(
         @NotNull LocalDate dueDate,
         @NotBlank @Size(max = 200) String actionTitle,
         String actionDescription,
-        @PositiveOrZero int reminderDaysBefore
+        @PositiveOrZero Integer reminderDaysBefore
 ) {
+    public ContractScheduleRequest {
+        if (reminderDaysBefore == null) reminderDaysBefore = 3;
+    }
 }

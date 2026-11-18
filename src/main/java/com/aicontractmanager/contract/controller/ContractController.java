@@ -46,6 +46,11 @@ public class ContractController {
         };
     }
 
+    @GetMapping("/attention")
+    public List<Contract> attention(Principal principal) {
+        return service.attention(userId(principal));
+    }
+
     @GetMapping("/{id}")
     public Contract get(Principal principal, @PathVariable UUID id) {
         return service.get(userId(principal), id);
