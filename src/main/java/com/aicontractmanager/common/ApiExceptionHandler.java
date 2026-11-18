@@ -35,6 +35,12 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(ex.getStatusCode()).contentType(MediaType.APPLICATION_JSON).body(new Error("HTTP_" + ex.getStatusCode().value(),
                 ex.getReason() == null ? "요청을 처리할 수 없습니다." : ex.getReason(), List.of()));
     }
+    @ExceptionHandler(com.aicontractmanager.document.service.DuplicateContractDocumentException.class)
+    public ResponseEntity<Error> handleDuplicateDocument(
+            com.aicontractmanager.document.service.DuplicateContractDocumentException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).contentType(MediaType.APPLICATION_JSON)
+                .body(new Error("DUPLICATE_CONTRACT_DOCUMENT", ex.getMessage(), List.of()));
+    }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Error> handleUnexpected(Exception ex) {
         logger.error("Unhandled API error", ex);

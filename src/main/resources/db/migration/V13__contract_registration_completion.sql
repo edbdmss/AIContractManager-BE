@@ -1,0 +1,1 @@
+ALTER TABLE contracts ADD COLUMN registration_completed BOOLEAN NOT NULL DEFAULT TRUE;

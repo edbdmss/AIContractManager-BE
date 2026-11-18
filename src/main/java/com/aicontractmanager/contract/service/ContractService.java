@@ -63,6 +63,20 @@ public class ContractService {
     }
 
     @Transactional
+    public Contract createDraft(UUID userId, ContractRequest request) {
+        Contract contract = create(userId, request);
+        repository.markDraft(contract.id(), userId);
+        return get(userId, contract.id());
+    }
+
+    @Transactional
+    public Contract save(UUID userId, UUID id, ContractRequest request) {
+        get(userId, id);
+        repository.completeRegistration(id, userId);
+        return update(userId, id, request);
+    }
+
+    @Transactional
     public Contract update(UUID userId, UUID id, ContractRequest request) {
         Contract existing = get(userId, id);
         validateDates(request, repository.isDocumentRegistration(id, userId));

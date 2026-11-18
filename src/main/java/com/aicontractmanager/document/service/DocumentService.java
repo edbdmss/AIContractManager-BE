@@ -62,6 +62,9 @@ public class DocumentService {
         }
         FileType type = fileType(filename, bytes);
         String checksum = sha256(bytes);
+        if (repository.existsRegisteredDocument(userId, contractId, checksum)) {
+            throw new DuplicateContractDocumentException();
+        }
         String key = storage.save(bytes, type.extension());
         UUID id = UUID.randomUUID();
         try {

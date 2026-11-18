@@ -62,9 +62,15 @@ public class ContractController {
         return service.create(userId(principal), request);
     }
 
+    @PostMapping("/drafts")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Contract createDraft(Principal principal, @Valid @RequestBody ContractRequest request) {
+        return service.createDraft(userId(principal), request);
+    }
+
     @PutMapping("/{id}")
     public Contract update(Principal principal, @PathVariable UUID id, @Valid @RequestBody ContractRequest request) {
-        return service.update(userId(principal), id, request);
+        return service.save(userId(principal), id, request);
     }
 
     @PostMapping("/{id}/verify-amount")

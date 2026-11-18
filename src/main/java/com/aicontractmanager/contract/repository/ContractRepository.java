@@ -24,7 +24,7 @@ public class ContractRepository {
     }
 
     public List<Contract> findAll(UUID userId) {
-        return jdbc.query("SELECT * FROM contracts WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC, id DESC",
+        return jdbc.query("SELECT * FROM contracts WHERE user_id = ? AND deleted_at IS NULL AND registration_completed = TRUE ORDER BY created_at DESC, id DESC",
                 rowMapper, userId.toString());
     }
 
@@ -32,7 +32,7 @@ public class ContractRepository {
         return jdbc.query("""
                 SELECT * FROM contracts
                 WHERE user_id = ? AND deleted_at IS NULL
-                  AND status IN ('ACTIVE', 'PENDING_VERIFICATION')
+                  AND registration_completed = TRUE AND status IN ('ACTIVE', 'PENDING_VERIFICATION')
                   AND contract_end_date BETWEEN ? AND ?
                 ORDER BY contract_end_date, created_at DESC, id
                 """, rowMapper, userId.toString(), from, through);
@@ -48,6 +48,23 @@ public class ContractRepository {
                 "SELECT COUNT(*) FROM contracts WHERE id = ? AND user_id = ? AND registration_mode = 'DOCUMENT'",
                 Integer.class, id.toString(), userId.toString());
         return count != null && count > 0;
+    }
+
+    public boolean isDraft(UUID id, UUID userId) {
+        return Boolean.FALSE.equals(jdbc.queryForObject(
+                "SELECT registration_completed FROM contracts WHERE id = ? AND user_id = ?",
+                Boolean.class, id.toString(), userId.toString()));
+    }
+
+    public void markDraft(UUID id, UUID userId) {
+        jdbc.update("UPDATE contracts SET registration_completed = FALSE, status = 'PENDING_VERIFICATION' WHERE id = ? AND user_id = ?",
+                id.toString(), userId.toString());
+        cancelReminders(id);
+    }
+
+    public void completeRegistration(UUID id, UUID userId) {
+        jdbc.update("UPDATE contracts SET registration_completed = TRUE WHERE id = ? AND user_id = ?",
+                id.toString(), userId.toString());
     }
 
     public void create(UUID id, UUID userId, ContractRequest request) {
@@ -75,7 +92,7 @@ public class ContractRepository {
                     next_payment_date = ?, cancellation_deadline = ?, monthly_amount = ?,
                     penalty_amount = ?, cancellation_terms = ?, plain_summary = ?, renewal_cycle_months = ?,
                     amount_verified = ?,
-                    status = CASE WHEN status IN ('CANCELLED','EXPIRED') THEN status WHEN ? THEN 'ACTIVE' ELSE 'PENDING_VERIFICATION' END
+                    status = CASE WHEN status IN ('CANCELLED','EXPIRED') THEN status WHEN ? AND registration_completed = TRUE THEN 'ACTIVE' ELSE 'PENDING_VERIFICATION' END
                 WHERE id = ? AND user_id = ? AND deleted_at IS NULL
                 """, request.title(), request.category(), request.providerName(), request.contractStartDate(),
                 request.contractEndDate(), request.renewalCycleMonths() != null, request.nextPaymentDate(), request.nextPaymentDate(), request.nextPaymentDate(),
@@ -119,7 +136,7 @@ public class ContractRepository {
 
     public void verifyAmount(UUID id, UUID userId) {
         jdbc.update("""
-                UPDATE contracts SET amount_verified = TRUE, status = CASE WHEN status IN ('CANCELLED','EXPIRED') THEN status ELSE 'ACTIVE' END
+                UPDATE contracts SET amount_verified = TRUE, status = CASE WHEN status IN ('CANCELLED','EXPIRED') THEN status WHEN registration_completed = FALSE THEN 'PENDING_VERIFICATION' ELSE 'ACTIVE' END
                 WHERE id = ? AND user_id = ? AND deleted_at IS NULL
                 """, id.toString(), userId.toString());
     }
@@ -143,7 +160,7 @@ public class ContractRepository {
 
     private void syncSchedules(UUID id, UUID userId) {
         Contract contract = findOwned(id, userId).orElseThrow();
-        if (java.util.Set.of("CANCELLED", "EXPIRED").contains(contract.status())) return;
+        if (isDraft(id, userId) || java.util.Set.of("CANCELLED", "EXPIRED").contains(contract.status())) return;
         syncSchedule(id, userId, "EXPIRY", contract.contractEndDate(), "계약 만료 예정");
         boolean subscription = "SUBSCRIPTION".equalsIgnoreCase(contract.category());
         syncSchedule(id, userId, "RENEWAL", subscription ? null : contract.nextPaymentDate(),
