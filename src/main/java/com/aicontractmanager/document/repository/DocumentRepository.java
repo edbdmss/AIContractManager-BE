@@ -33,6 +33,16 @@ public class DocumentRepository {
                 rowMapper, contractId.toString(), id.toString()).stream().findFirst();
     }
 
+    public boolean existsRegisteredDocument(UUID userId, UUID contractId, String checksum) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM documents d
+                JOIN contracts c ON c.id = d.contract_id
+                WHERE c.user_id = ? AND c.deleted_at IS NULL AND d.deleted_at IS NULL
+                  AND d.checksum = ? AND (c.registration_completed = TRUE OR c.id = ?)
+                """, Integer.class, userId.toString(), checksum, contractId.toString());
+        return count != null && count > 0;
+    }
+
     public void create(UUID id, UUID contractId, String filename, String storageKey,
                        String contentType, long size, String checksum, boolean primary) {
         jdbc.update("""
