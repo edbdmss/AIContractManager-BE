@@ -3,9 +3,9 @@
 ## 홈 확인 필요 계약
 
 `GET /api/aicontract/contracts/attention` (인증 필수). 계약 객체 배열을 반환한다.
-한국 날짜 기준 오늘 <= contractEndDate <= 오늘+7일인 내 계약만 반환한다.
-ACTIVE/PENDING_VERIFICATION을 포함하며 종료일 미정·이미 만료된 날짜·CANCELLED/EXPIRED·소프트 삭제는 제외한다.
-계약 종료일 오름차순. 일반 계약 목록 GET /contracts는 전체 목록으로 유지한다.
+한국 날짜 기준 오늘부터 오늘+7일까지(양끝 포함) contractEndDate, nextPaymentDate, cancellationDeadline 중 하나라도 해당하는 내 계약을 반환한다.
+등록 완료된 ACTIVE/PENDING_VERIFICATION 계약만 포함한다. NULL이나 지난 날짜는 해당 일정의 후보에서 제외하며 CANCELLED/EXPIRED·소프트 삭제·임시 계약은 제외한다.
+범위 안의 가장 가까운 일정 오름차순이며 계약당 한 번만 반환한다. 일반 계약 목록 GET /contracts는 전체 목록으로 유지한다.
 대시보드의 기존 3일 만료 기준은 별도 기능으로 유지한다. 홈은 새 API에 연결해야 화면이 바뀐다.
 
 ## 갱신 주기

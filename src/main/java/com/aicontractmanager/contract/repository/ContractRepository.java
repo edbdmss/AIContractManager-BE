@@ -33,9 +33,16 @@ public class ContractRepository {
                 SELECT * FROM contracts
                 WHERE user_id = ? AND deleted_at IS NULL
                   AND registration_completed = TRUE AND status IN ('ACTIVE', 'PENDING_VERIFICATION')
-                  AND contract_end_date BETWEEN ? AND ?
-                ORDER BY contract_end_date, created_at DESC, id
-                """, rowMapper, userId.toString(), from, through);
+                  AND (contract_end_date BETWEEN ? AND ?
+                    OR next_payment_date BETWEEN ? AND ?
+                    OR cancellation_deadline BETWEEN ? AND ?)
+                ORDER BY LEAST(
+                    CASE WHEN contract_end_date BETWEEN ? AND ? THEN contract_end_date ELSE '9999-12-31' END,
+                    CASE WHEN next_payment_date BETWEEN ? AND ? THEN next_payment_date ELSE '9999-12-31' END,
+                    CASE WHEN cancellation_deadline BETWEEN ? AND ? THEN cancellation_deadline ELSE '9999-12-31' END
+                ), created_at DESC, id
+                """, rowMapper, userId.toString(), from, through, from, through, from, through,
+                from, through, from, through, from, through);
     }
 
     public Optional<Contract> findOwned(UUID id, UUID userId) {
