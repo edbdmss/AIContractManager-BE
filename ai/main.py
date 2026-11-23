@@ -17,8 +17,6 @@ from rag.legal_retriever import retrieve_legal_rules
 from rag.legal_analyzer import analyze_legal_clauses
 from rag.pdf_highlighter import highlight_review_clauses
 
-from chatbot.schemas import ChatRequest, ChatResponse
-from chatbot.chat_service import process_chat
 
 BASE_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = BASE_DIR / "analysis_outputs"
@@ -488,26 +486,3 @@ def download_highlighted_pdf(analysis_id: uuid.UUID):
         media_type="application/pdf",
         filename="highlighted_contract.pdf",
     )
-
-
-@app.post("/chat", response_model=ChatResponse)
-def chat(request: ChatRequest):
-    try:
-        return process_chat(request)
-
-    except ValueError as e:
-        raise HTTPException(
-            status_code=400,
-            detail=str(e),
-        )
-
-    except Exception as e:
-        print(
-            f"챗봇 오류: {type(e).__name__}: {e}",
-            flush=True,
-        )
-
-        raise HTTPException(
-            status_code=502,
-            detail="챗봇 응답 생성에 실패했습니다.",
-        )
