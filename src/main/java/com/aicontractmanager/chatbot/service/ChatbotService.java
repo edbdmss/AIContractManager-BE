@@ -9,6 +9,11 @@ import com.aicontractmanager.chatbot.repository.ChatRepository;
 import com.aicontractmanager.contract.domain.Contract;
 import com.aicontractmanager.contract.service.ContractService;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.aicontractmanager.chatbot.dto.ChatMetadata;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,17 +26,20 @@ import java.util.UUID;
 
 @Service
 public class ChatbotService {
+    private static final Logger log = LoggerFactory.getLogger(ChatbotService.class);
+    private final ObjectMapper mapper;
     private final ChatRepository repository;
     private final ContractService contracts;
     private final RestClient aiClient;
     private final boolean aiEnabled;
     private final String chatPath;
 
-    public ChatbotService(ChatRepository repository, ContractService contracts, RestClient.Builder builder,
+    public ChatbotService(ChatRepository repository, ContractService contracts, RestClient.Builder builder, ObjectMapper mapper,
                           @Value("${app.ai.enabled:true}") boolean aiEnabled,
                           @Value("${app.ai.base-url:http://localhost:8000}") String aiBaseUrl,
                           @Value("${app.ai.chat-path:/chat}") String chatPath) {
         this.repository = repository;
+        this.mapper = mapper;
         this.contracts = contracts;
         this.aiClient = builder.baseUrl(aiBaseUrl).build();
         this.aiEnabled = aiEnabled;
@@ -82,7 +90,17 @@ public class ChatbotService {
             }
             String answer = response.get("answer").asText();
             UUID assistantMessageId = UUID.randomUUID();
-            repository.saveMessage(assistantMessageId, sessionId, "ASSISTANT", answer);
+            ChatMetadata metadata = parseMetadata(response, context);
+            repository.saveMessage(assistantMessageId, sessionId, "ASSISTANT", answer, metadata);
+            JsonNode timings = response.get("timings");
+            if (timings != null && timings.isObject()) {
+                timings.fields().forEachRemaining(entry -> {
+                    if (entry.getValue().isNumber() && entry.getKey().matches("[A-Za-z0-9_]{1,64}")) {
+                        log.info("Chat AI timing sessionId={} stage={} seconds={}", sessionId,
+                                entry.getKey(), entry.getValue().doubleValue());
+                    }
+                });
+            }
             ChatMessage saved = repository.findMessage(assistantMessageId, sessionId).orElseThrow();
             return new ChatReply(sessionId, saved);
         } catch (RestClientException | IllegalStateException e) {
@@ -99,8 +117,27 @@ public class ChatbotService {
         return new ChatAiRequest.ContractContext(contract.id().toString(), contract.title(), contract.category(),
                 contract.providerName(), contract.status(), string(contract.contractEndDate()),
                 string(contract.nextPaymentDate()), string(contract.cancellationDeadline()),
-                contract.monthlyAmount() == null ? null : contract.monthlyAmount().toPlainString(),
-                truncate(contract.cancellationTerms(), 2500), truncate(contract.plainSummary(), 1000));
+                contract.monthlyAmount(),
+                truncate(contract.cancellationTerms(), 2500), truncate(contract.plainSummary(), 1000),
+                string(contract.contractStartDate()), contract.penaltyAmount(), contract.amountVerified(),
+                contract.currency(), repository.findRiskReports(contract.id()));
+    }
+
+    private ChatMetadata parseMetadata(JsonNode response, List<ChatAiRequest.ContractContext> context) {
+        ObjectNode fields = mapper.createObjectNode();
+        for (String field : List.of("answerType", "referencedContractIds", "legalSources", "needsMoreInfo")) {
+            if (response.has(field)) fields.set(field, response.get(field));
+        }
+        try {
+            ChatMetadata metadata = mapper.treeToValue(fields, ChatMetadata.class);
+            List<UUID> allowed = context.stream().map(c -> UUID.fromString(c.contractId())).toList();
+            if (!allowed.containsAll(metadata.referencedContractIds())) {
+                throw new IllegalStateException("AI가 요청 범위 밖의 계약을 참조했습니다.");
+            }
+            return metadata;
+        } catch (com.fasterxml.jackson.core.JsonProcessingException | IllegalArgumentException e) {
+            throw new IllegalStateException("AI 응답 메타데이터 형식이 올바르지 않습니다.", e);
+        }
     }
 
     private String string(Object value) {
