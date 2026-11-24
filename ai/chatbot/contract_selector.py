@@ -1,117 +1,171 @@
-
-import re
-import time
-
 CATEGORY_ALIASES = {
-    "FITNESS": ("헬스", "헬스장", "피트니스", "운동", "pt", "필라테스", "요가"),
-    "TELECOM": ("통신", "휴대폰", "핸드폰", "인터넷", "와이파이"),
-    "RENTAL": ("렌탈", "정수기", "공기청정기"),
-    "HOUSING": ("월세", "전세", "임대차", "집 계약", "주택"),
-    "INSURANCE": ("보험", "보험료"),
-    "SUBSCRIPTION": ("구독", "ott", "넷플릭스", "유튜브"),
+    "FITNESS": (
+        "헬스",
+        "헬스장",
+        "피트니스",
+        "운동",
+        "필라테스",
+        "요가",
+        "fitness",
+    ),
+
+    "TELECOM": (
+        "통신",
+        "휴대폰",
+        "핸드폰",
+        "인터넷",
+        "와이파이",
+        "telecom",
+    ),
+
+    "RENTAL": (
+        "렌탈",
+        "렌털",
+        "정수기",
+        "공기청정기",
+        "rental",
+    ),
+
+    "HOUSING": (
+        "부동산",
+        "임대차",
+        "임대인",
+        "임차인",
+        "월세",
+        "전세",
+        "주택",
+        "보증금",
+        "housing",
+    ),
+
+    "INSURANCE": (
+        "보험",
+        "보험료",
+        "보험사",
+        "insurance",
+    ),
+
+    "SUBSCRIPTION": (
+        "구독",
+        "넷플릭스",
+        "유튜브",
+        "디즈니",
+        "스포티파이",
+        "ott",
+        "subscription",
+    ),
 }
 
-FOLLOWUP_WORDS = (
-    "그럼", "그러면", "그 계약", "그거", "그것",
-    "거기", "아까", "방금", "그 경우",
-)
+
+LEGAL_CATEGORIES = {
+    "FITNESS",
+    "TELECOM",
+    "RENTAL",
+    "HOUSING",
+    "INSURANCE",
+}
 
 
-def _normalize(value):
-    return re.sub(r"\s+", "", str(value or "").lower())
+def normalize(text):
+    return "".join(
+        str(text or "").lower().split()
+    )
 
 
-def _score(contract, question):
-    q = _normalize(question)
-    score = 0
-
-    for field in ("title", "contractName", "providerName"):
-        name = _normalize(contract.get(field))
-        if len(name) >= 2 and name in q:
-            score += 10
-
-    category = str(contract.get("category") or "").upper()
-    for alias in CATEGORY_ALIASES.get(category, ()):
-        if _normalize(alias) in q:
-            score += 5
-            break
-
-    return score
-
-
-def select_contract(message, contracts, contract_id=None, history=None):
-    start = time.perf_counter()
+def infer_categories(
+    message,
+    contracts=None,
+    history=None,
+):
+    contracts = contracts or []
     history = history or []
 
-    def result(contract=None, ambiguous=False, candidates=None, reason=""):
-        return {
-            "contract": contract,
-            "ambiguous": ambiguous,
-            "candidates": candidates or [],
-            "reason": reason,
-            "selection_time": round(time.perf_counter() - start, 6),
-        }
+    query = normalize(message)
 
-    if contract_id is not None:
-        matches = [
-            c for c in contracts
-            if str(c.get("id")) == str(contract_id)
-        ]
-        if not matches:
-            return result(reason="INVALID_CONTRACT_ID")
-        return result(matches[0], reason="EXPLICIT_ID")
+    categories = set()
 
-    if not contracts:
-        return result(reason="NO_CONTRACTS")
+    # 1. 현재 질문의 카테고리 확인
+    for category, aliases in CATEGORY_ALIASES.items():
 
-    scored = sorted(
-        [(_score(c, message), c) for c in contracts],
-        key=lambda item: item[0],
-        reverse=True,
-    )
+        if any(
+            normalize(alias) in query
+            for alias in aliases
+        ):
+            categories.add(category)
 
-    best_score = scored[0][0]
+    # 2. 계약명 및 업체명 확인
+    for contract in contracts:
 
-    if best_score > 0:
-        matches = [c for score, c in scored if score == best_score]
-        if len(matches) == 1:
-            return result(matches[0], reason="QUESTION_MATCH")
-        return result(
-            ambiguous=True,
-            candidates=matches,
-            reason="MULTIPLE_MATCHES",
+        names = (
+            contract.get("title"),
+            contract.get("contractName"),
+            contract.get("providerName"),
         )
 
-    if len(contracts) == 1:
-        return result(contracts[0], reason="ONLY_CONTRACT")
+        for name in names:
+            normalized_name = normalize(name)
 
-    # 현재 질문에 명시된 계약이 없을 때만 이전 사용자 질문을 참고한다.
-    # 가장 최근 질문부터 살펴보고, 유일하게 일치하는 경우에만 선택한다.
-    if any(word in message.lower() for word in FOLLOWUP_WORDS):
-        for item in reversed(history[-10:]):
-            role = item.role if hasattr(item, "role") else item.get("role")
-            content = (
-                item.content if hasattr(item, "content")
-                else item.get("content", "")
+            if (
+                len(normalized_name) >= 2
+                and normalized_name in query
+            ):
+                category = contract.get("category")
+
+                if category:
+                    categories.add(category)
+
+    if categories:
+        return sorted(categories)
+
+    # 3. 후속 질문인 경우 최근 대화 참고
+    for item in reversed(history):
+
+        if hasattr(item, "model_dump"):
+            item = item.model_dump()
+
+        if item.get("role", "").lower() != "user":
+            continue
+
+        previous_query = normalize(
+            item.get("content")
+        )
+
+        for category, aliases in CATEGORY_ALIASES.items():
+
+            if any(
+                normalize(alias) in previous_query
+                for alias in aliases
+            ):
+                categories.add(category)
+
+        for contract in contracts:
+
+            names = (
+                contract.get("title"),
+                contract.get("contractName"),
+                contract.get("providerName"),
             )
-            if role != "user":
-                continue
 
-            previous_scores = sorted(
-                [(_score(c, content), c) for c in contracts],
-                key=lambda pair: pair[0],
-                reverse=True,
-            )
-            top = previous_scores[0][0]
-            matches = [c for s, c in previous_scores if s == top]
+            if any(
+                len(normalize(name)) >= 2
+                and normalize(name) in previous_query
+                for name in names
+            ):
+                category = contract.get("category")
 
-            if top > 0:
-                if len(matches) == 1:
-                    return result(matches[0], reason="HISTORY_MATCH")
-                break
+                if category:
+                    categories.add(category)
 
-    return result(
-        ambiguous=True,
-        candidates=contracts,
-        reason="CONTRACT_NOT_IDENTIFIED",
-    )
+        if categories:
+            return sorted(categories)
+
+    # 4. 특정 카테고리를 찾지 못한 경우
+    # 전달받은 계약들의 카테고리 참고
+    for contract in contracts:
+
+        category = contract.get("category")
+
+        if category:
+            categories.add(category)
+
+    return sorted(categories)

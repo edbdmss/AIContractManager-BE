@@ -1,57 +1,112 @@
-
-import re
 import time
 
 
 LEGAL_KEYWORDS = (
-    "법률", "법적", "법적으로", "법", "규정",
-    "위약금", "환불", "해지", "해약",
-    "중도 해지", "불공정", "위법", "권리",
-    "분쟁", "손해배상", "보상", "위반",
+    "법률",
+    "법적",
+    "법적으로",
+    "법령",
+    "법규",
+    "법상",
+    "관련법",
+    "보호법",
+    "소비자보호",
+    "위약금",
+    "환불",
+    "해지",
+    "해약",
+    "중도해지",
+    "취소",
+    "불공정",
+    "위법",
+    "불법",
+    "합법",
+    "권리",
+    "분쟁",
+    "손해배상",
+    "보상",
+    "위반",
+    "신고",
+    "약관",
+    "청약철회",
+    "보증금",
+    "갱신청구권",
+    "돌려받",
+    "돌려줘",
+    "계약해제",
+    "부당",
 )
 
-CONTRACT_KEYWORDS = (
-    "내 계약", "내가", "나의", "등록한",
-    "저장한", "우리", "내 헬스장",
-    "내 보험", "내 통신", "내 렌탈",
-    "내 임대차", "내 월세", "내 전세",
-)
 
-CONTRACT_FIELDS = (
-    "언제", "종료", "만료", "시작",
-    "기간", "금액", "얼마", "납부",
-    "월 납부", "요약", "목록", "갱신",
-)
+def normalize(text):
+    return "".join(
+        str(text or "").lower().split()
+    )
 
 
-def classify_question(message, has_contract=False):
+def classify_question(
+    message,
+    has_contract=False,
+    history=None,
+):
     start = time.perf_counter()
 
-    text = re.sub(r"\s+", " ", message).strip().lower()
+    query = normalize(message)
 
-    is_legal = any(
-        keyword in text for keyword in LEGAL_KEYWORDS
+    needs_legal_rag = any(
+        normalize(keyword) in query
+        for keyword in LEGAL_KEYWORDS
     )
 
-    is_contract = (
-        has_contract
-        or any(keyword in text for keyword in CONTRACT_KEYWORDS)
-        or (
-            any(keyword in text for keyword in CONTRACT_FIELDS)
-            and "계약" in text
+    # 짧은 후속 질문에서 이전 법률 질문 참고
+    followup_words = (
+        "그럼",
+        "그러면",
+        "그경우",
+        "그거",
+        "그건",
+        "얼마",
+        "가능해",
+        "어떻게",
+        "맞아",
+    )
+
+    if not needs_legal_rag:
+
+        is_followup = (
+            len(query) <= 35
+            and any(
+                word in query
+                for word in followup_words
+            )
         )
-    )
 
-    if is_legal and is_contract:
-        question_type = "HYBRID"
-    elif is_legal:
-        question_type = "LEGAL"
-    else:
-        question_type = "CONTRACT"
+        if is_followup:
+
+            for item in reversed(history or []):
+
+                if hasattr(item, "model_dump"):
+                    item = item.model_dump()
+
+                if item.get("role", "").lower() != "user":
+                    continue
+
+                previous_query = normalize(
+                    item.get("content")
+                )
+
+                needs_legal_rag = any(
+                    normalize(keyword) in previous_query
+                    for keyword in LEGAL_KEYWORDS
+                )
+
+                break
 
     return {
-        "type": question_type,
+        "needs_legal_rag": needs_legal_rag,
+
         "routing_time": round(
-            time.perf_counter() - start, 6
+            time.perf_counter() - start,
+            6,
         ),
     }
