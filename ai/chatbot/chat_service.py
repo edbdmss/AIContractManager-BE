@@ -1,60 +1,96 @@
-
 import json
 import os
 import time
+import logging
+
 from pathlib import Path
 
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-from chatbot.schemas import ChatResponse, GeminiChatResult
+from chatbot.schemas import (
+    ChatResponse,
+    GeminiChatResult,
+)
+
 from chatbot.question_router import classify_question
-from chatbot.contract_context import build_contract_context
-from chatbot.contract_selector import select_contract
+
+from chatbot.contract_context import (
+    build_contract_context,
+)
+
+from chatbot.contract_selector import (
+    infer_categories,
+    LEGAL_CATEGORIES,
+)
+
 from chatbot.prompts import SYSTEM_PROMPT
+
 from rag.legal_retriever import retrieve_legal_rules
 
 
-load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+load_dotenv(
+    Path(__file__).resolve().parent.parent / ".env"
+)
+
 
 GEMINI_MODEL = os.getenv(
     "GEMINI_CHAT_MODEL",
     "gemini-3.5-flash-lite",
 )
 
-def _normalize_legal_rule(rule):
-    return {
-        "ruleId": rule.get("ruleId") or rule.get("rule_id"),
-        "lawName": rule.get("lawName") or rule.get("law_name"),
-        "article": rule.get("article"),
-        "title": rule.get("title"),
-        "sourceUrl": rule.get("sourceUrl") or rule.get("source_url"),
-    }
+
+logger = logging.getLogger(__name__)
+
 
 def _history_to_dict(history):
     result = []
+
     for item in history[-10:]:
+
         if hasattr(item, "model_dump"):
             data = item.model_dump()
         else:
             data = dict(item)
 
-        if data.get("role") in ("user", "assistant"):
-            result.append({
-                "role": data["role"],
-                "content": str(data.get("content", ""))[:2000],
-            })
+        role = str(
+            data.get("role", "")
+        ).lower()
+
+        if role not in ("user", "assistant"):
+            continue
+
+        result.append({
+            "role": role,
+            "content": str(
+                data.get("content", "")
+            )[:4000],
+        })
+
     return result
 
 
 def _normalize_legal_rule(rule):
     return {
         **rule,
-        "ruleId": rule.get("ruleId") or rule.get("rule_id"),
-        "lawName": rule.get("lawName") or rule.get("law_name"),
-        "sourceUrl": rule.get("sourceUrl") or rule.get("source_url"),
+
+        "ruleId": (
+            rule.get("ruleId")
+            or rule.get("rule_id")
+        ),
+
+        "lawName": (
+            rule.get("lawName")
+            or rule.get("law_name")
+        ),
+
+        "sourceUrl": (
+            rule.get("sourceUrl")
+            or rule.get("source_url")
+        ),
     }
+
 
 def _rule_to_source(rule):
     return {
@@ -66,248 +102,444 @@ def _rule_to_source(rule):
     }
 
 
-def _generate_structured_answer(payload):
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise ValueError("GEMINI_API_KEY가 설정되지 않았습니다.")
-
-    client = genai.Client(api_key=api_key)
-
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=json.dumps(payload, ensure_ascii=False, default=str),
-        config=types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT + """
-
-[구조화 응답 규칙]
-- 반드시 지정된 JSON 스키마로 응답한다.
-- answer에는 사용자에게 보여줄 답변만 작성한다.
-- 추가 정보가 없어서 정확한 답변이 불가능하거나
-  추가 질문이 필요하면 needsMoreInfo를 true로 설정한다.
-- usedRuleIds에는 실제 답변의 근거로 사용한
-  법률 규칙 ID만 넣는다.
-- 제공된 legal_rules에 없는 ID를 만들지 않는다.
-- 계약 정보와 법률 정보를 구분한다.
-- 이전 대화는 질문 맥락을 이해하는 데만 활용한다.
-- 이전 대화의 내용이 현재 계약 정보와 충돌하면
-  현재 제공된 계약 정보를 우선한다.
-- 계약이나 법률 데이터에 없는 사실은 추측하지 않는다.
-- 단순 계약 조회에는 불필요한 법률 설명을 넣지 않는다.
-""",
-            temperature=0.2,
-            response_mime_type="application/json",
-            response_schema=GeminiChatResult,
-        ),
+def _build_search_query(
+    message,
+    history,
+):
+    # 현재 질문이 짧은 후속 질문이라면
+    # 직전 사용자 질문을 함께 검색에 활용
+    followup_words = (
+        "그럼",
+        "그러면",
+        "그거",
+        "그건",
+        "그 경우",
+        "얼마",
+        "어떻게",
+        "가능해",
     )
 
-    if response.parsed is not None:
-        if isinstance(response.parsed, GeminiChatResult):
-            return response.parsed
-        return GeminiChatResult.model_validate(response.parsed)
+    is_followup = (
+        len(message) <= 35
+        and any(
+            word in message
+            for word in followup_words
+        )
+    )
 
-    if not response.text:
-        raise ValueError("Gemini가 빈 응답을 반환했습니다.")
+    if not is_followup:
+        return message
 
-    return GeminiChatResult.model_validate_json(response.text)
+    for item in reversed(history):
+
+        if item.get("role") == "user":
+
+            return (
+                item.get("content", "")
+                + "\n"
+                + message
+            )
+
+    return message
+
+
+def _retrieve_legal_context(
+    message,
+    contracts,
+    history,
+):
+    start = time.perf_counter()
+
+    categories = infer_categories(
+        message=message,
+        contracts=contracts,
+        history=history,
+    )
+
+    search_query = _build_search_query(
+        message,
+        history,
+    )
+
+    # 카테고리가 특정되지 않은 일반 법률 질문은
+    # 현재 구축된 법률 카테고리를 검색
+    if not categories:
+        categories = sorted(LEGAL_CATEGORIES)
+
+    collected_rules = {}
+
+    retrieval_status = {}
+
+    for category in categories:
+
+        # 구독, 기타, 미분류는
+        # 기존 계약 법률 RAG에서 제외
+        if category not in LEGAL_CATEGORIES:
+
+            retrieval_status[category] = (
+                "LEGAL_DATA_NOT_AVAILABLE"
+            )
+
+            continue
+
+        result = retrieve_legal_rules(
+            query=search_query,
+            category=category,
+            top_k=3,
+        )
+
+        retrieval_status[category] = result.get(
+            "status"
+        )
+
+        for rule in result.get("results", []):
+
+            normalized = _normalize_legal_rule(
+                rule
+            )
+
+            rule_id = normalized.get("ruleId")
+
+            if not rule_id:
+                continue
+
+            collected_rules[rule_id] = normalized
+
+    rules = list(
+        collected_rules.values()
+    )
+
+    return {
+        "categories": categories,
+
+        "rules": rules,
+
+        "status": retrieval_status,
+
+        "retrieval_time": round(
+            time.perf_counter() - start,
+            6,
+        ),
+    }
+
+
+def _generate_structured_answer(payload):
+    api_key = os.getenv("GEMINI_API_KEY")
+
+    if not api_key:
+        raise ValueError(
+            "GEMINI_API_KEY가 설정되지 않았습니다."
+        )
+
+    client = genai.Client(
+        api_key=api_key
+    )
+
+    try:
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+
+            contents=json.dumps(
+                payload,
+                ensure_ascii=False,
+            ),
+
+            config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT,
+
+                temperature=0.2,
+
+                response_mime_type="application/json",
+
+                response_schema=GeminiChatResult,
+            ),
+        )
+
+        parsed = response.parsed
+
+        if isinstance(parsed, GeminiChatResult):
+            return parsed
+
+        if isinstance(parsed, dict):
+            return GeminiChatResult.model_validate(
+                parsed
+            )
+
+        if not response.text:
+            raise ValueError(
+                "Gemini 응답이 비어 있습니다."
+            )
+
+        return GeminiChatResult.model_validate_json(
+            response.text
+        )
+
+    finally:
+        client.close()
 
 
 def process_chat(request):
     total_start = time.perf_counter()
-    timings = {}
+
+    # ========================================
+    # 1. 질문 및 대화 이력 준비
+    # ========================================
+
+    preparation_start = time.perf_counter()
 
     message = request.message.strip()
-    contracts = request.contracts or []
-    history = request.history or []
 
-    if not message:
-        raise ValueError("질문을 입력해 주세요.")
+    contracts = request.contracts
 
-    # 1. 질문과 관련된 계약 선택
-    selection = select_contract(
-        message=message,
-        contracts=contracts,
-        contract_id=request.contractId,
-        history=history,
-    )
-    timings["contract_selection"] = selection["selection_time"]
-
-    if selection["reason"] == "INVALID_CONTRACT_ID":
-        raise ValueError("요청한 계약 ID를 찾을 수 없습니다.")
-
-    # 2. 질문 유형 분류
-    route_start = time.perf_counter()
-
-    # 이전 대화에서 계약을 명확히 지칭한 경우,
-    # 현재의 짧은 후속 질문과 함께 유형 분류에 활용한다.
-    routing_message = message
-    if selection["reason"] == "HISTORY_MATCH":
-        previous_user_messages = [
-            h["content"]
-            for h in _history_to_dict(history)
-            if h["role"] == "user"
-        ]
-        if previous_user_messages:
-            routing_message = (
-                previous_user_messages[-1] + "\n" + message
-            )
-
-    route = classify_question(
-        routing_message,
-        has_contract=selection["contract"] is not None,
+    history = _history_to_dict(
+        request.history
     )
 
-    answer_type = route.get("answerType") or route.get("type")
-
-    if answer_type not in ("CONTRACT", "LEGAL", "HYBRID"):
-        raise ValueError(
-            f"지원하지 않는 질문 분류 결과입니다: {route}"
-    )
-    timings["question_routing"] = round(
-        time.perf_counter() - route_start, 6
+    preparation_time = round(
+        time.perf_counter() - preparation_start,
+        6,
     )
 
-    # 3. 계약이 불명확한 경우
-    # 순수 법률 일반 질문은 계약 선택 없이 진행할 수 있다.
-    if selection["ambiguous"] and answer_type != "LEGAL":
-        names = [
-            f"- {c.get('title') or c.get('contractName') or '이름 없는 계약'}"
-            f" (ID: {c.get('id')})"
-            for c in selection["candidates"][:5]
-        ]
-
-        answer = (
-            "어떤 계약에 대해 질문하시는지 확인이 필요해요.\n"
-            + "\n".join(names)
-            + "\n계약명을 알려주시거나 해당 계약을 선택해 주세요."
-        )
-
-        timings.update({
-            "contract_context": 0.0,
-            "legal_retrieval": 0.0,
-            "gemini_generation": 0.0,
-            "total": round(time.perf_counter() - total_start, 6),
-        })
-
-        return ChatResponse(
-            answer=answer,
-            answerType="CONTRACT",
-            referencedContractIds=[],
-            legalSources=[],
-            needsMoreInfo=True,
-            timings=timings,
-        )
-
-    selected_contract = selection["contract"]
-    selected_id = (
-        selected_contract.get("id")
-        if selected_contract else None
-    )
-
-    # 4. 계약 컨텍스트 구성
-    context_start = time.perf_counter()
+    # ========================================
+    # 2. 계약 Context 구성
+    # ========================================
 
     context = build_contract_context(
-        contracts=[selected_contract] if selected_contract else [],
-        contract_id=selected_id,
+        contracts=contracts,
+        contract_id=request.contractId,
     )
 
-    timings["contract_context"] = round(
-        time.perf_counter() - context_start, 6
+    context_time = context.pop(
+        "context_time"
     )
 
-    # 5. 법률 RAG 검색
-    legal_rules = []
-    retrieval_start = time.perf_counter()
+    selected_contracts = context["contracts"]
 
-    if answer_type in ("LEGAL", "HYBRID"):
-        category = (
-            selected_contract.get("category", "OTHER")
-            if selected_contract else "OTHER"
-        )
+    # ========================================
+    # 3. 법률 RAG 필요 여부 판단
+    # ========================================
 
-        retrieval = retrieve_legal_rules(
-            query=routing_message,
-            category=category,
-            top_k=3,
-        )
-        legal_rules = retrieval.get("results", [])
-        legal_rules = [
-            _normalize_legal_rule(rule)
-            for rule in retrieval.get("results", [])
-        ]
-        print(
-            "[CHAT] 실제 법률 검색 결과:",
-            json.dumps(legal_rules, ensure_ascii=False, indent=2),
-            flush=True,
-        )
+    route = classify_question(
+        message=message,
 
-    timings["legal_retrieval"] = round(
-        time.perf_counter() - retrieval_start, 6
+        has_contract=bool(
+            selected_contracts
+        ),
+
+        history=history,
     )
 
-    # 6. Gemini에 전달할 정보 구성
-    payload = {
-        "user_question": message,
-        "answer_type": answer_type,
-        "selected_contract": context,
-        "legal_rules": legal_rules,
-        "history": _history_to_dict(history),
-        "instructions": {
-            "use_only_provided_contract": True,
-            "use_only_retrieved_legal_rules": True,
-            "distinguish_contract_and_law": True,
-        },
+    routing_time = route["routing_time"]
+
+    # ========================================
+    # 4. 필요한 경우에만 법률 RAG 검색
+    # ========================================
+
+    legal_context = {
+        "categories": [],
+        "rules": [],
+        "status": {},
+        "retrieval_time": 0.0,
     }
 
-    # 7. 구조화 답변 생성
-    generation_start = time.perf_counter()
+    if route["needs_legal_rag"]:
 
-    generated = _generate_structured_answer(payload)
-    print(
-    "[CHAT] 검색된 법률 ID:",
-    [rule.get("ruleId") for rule in legal_rules],
-    flush=True,
+        legal_context = _retrieve_legal_context(
+            message=message,
+
+            contracts=selected_contracts,
+
+            history=history,
+        )
+
+    legal_rules = legal_context["rules"]
+
+    # ========================================
+    # 5. Gemini 입력 구성
+    # ========================================
+
+    payload_start = time.perf_counter()
+
+    payload = {
+        "user_question": message,
+
+        "history": history,
+
+        "contract_context": context,
+
+        "legal_rules": legal_rules,
+
+        "legal_retrieval_status": (
+            legal_context["status"]
+        ),
+
+        "legal_retrieval_categories": (
+            legal_context["categories"]
+        ),
+
+        "subscription_policy_available": False,
+
+        "contract_context_complete": False,
+    }
+
+    payload_time = round(
+        time.perf_counter() - payload_start,
+        6,
     )
 
+    # ========================================
+    # 6. Gemini 답변 생성
+    # ========================================
+
+    generation_start = time.perf_counter()
+
+    generated = _generate_structured_answer(
+        payload
+    )
+
+    generation_time = round(
+        time.perf_counter() - generation_start,
+        6,
+    )
+
+    # ========================================
+    # 7. 계약 ID 및 법률 출처 검증
+    # ========================================
+
+    validation_start = time.perf_counter()
+
+    valid_contract_ids = {
+        str(contract["id"])
+
+        for contract in selected_contracts
+
+        if contract.get("id")
+    }
+
+    referenced_contract_ids = list(
+        dict.fromkeys(
+            contract_id
+
+            for contract_id
+            in generated.referencedContractIds
+
+            if contract_id in valid_contract_ids
+        )
+    )
+
+    used_rule_ids = set(
+        generated.usedRuleIds
+    )
+
+    legal_sources = [
+        _rule_to_source(rule)
+
+        for rule in legal_rules
+
+        if rule.get("ruleId") in used_rule_ids
+    ]
+
+    answer_type = generated.answerType
+
+    if legal_sources:
+
+        answer_type = (
+            "HYBRID"
+            if referenced_contract_ids
+            else "LEGAL"
+        )
+
+    answer = generated.answer.strip()
+
+    if not answer:
+        raise ValueError(
+            "생성된 답변이 비어 있습니다."
+        )
+
+    # 검색된 법률 근거가 없는 법률 답변은
+    # 확인되지 않은 판단임을 명시
+    if (
+        answer_type in ("LEGAL", "HYBRID")
+        and not legal_sources
+    ):
+        answer += (
+            "\n\n※ 확인된 법률 검색 근거가 없어 "
+            "구체적인 법적 판단은 추가 확인이 필요합니다."
+        )
+
+    validation_time = round(
+        time.perf_counter() - validation_start,
+        6,
+    )
+
+    # ========================================
+    # 8. 실행시간 측정
+    # ========================================
+
+    total_time = round(
+        time.perf_counter() - total_start,
+        6,
+    )
+
+    timings = {
+        "preparation_time": preparation_time,
+
+        "context_time": context_time,
+
+        "routing_time": routing_time,
+
+        "retrieval_time": (
+            legal_context["retrieval_time"]
+        ),
+
+        "payload_time": payload_time,
+
+        "generation_time": generation_time,
+
+        "validation_time": validation_time,
+
+        "total_time": total_time,
+    }
+
+    # 사용자 질문과 계약 원문은 로그에 출력하지 않음
     print(
-        "[CHAT] Gemini가 사용한 법률 ID:",
-        generated.usedRuleIds,
+        "[CHAT] "
+        f"answerType={answer_type}, "
+        f"contracts={len(selected_contracts)}, "
+        f"referenced={len(referenced_contract_ids)}, "
+        f"legalRules={len(legal_rules)}, "
+        f"legalSources={len(legal_sources)}, "
+        f"total={total_time:.6f}s",
         flush=True,
     )
 
-    timings["gemini_generation"] = round(
-        time.perf_counter() - generation_start, 6
+    print(
+        "[CHAT TIMINGS] "
+        + json.dumps(
+            timings,
+            ensure_ascii=False,
+        ),
+        flush=True,
     )
 
-    # 8. Gemini가 사용했다고 주장한 법률 ID 검증
-    allowed_rules = {
-        str(rule.get("ruleId")): rule
-        for rule in legal_rules
-        if rule.get("ruleId") is not None
-    }
-
-    used_ids = set(generated.usedRuleIds)
-    verified_sources = [
-        _rule_to_source(rule)
-        for rule_id, rule in allowed_rules.items()
-        if rule_id in used_ids
-    ]
-
-    # 법률 검색을 수행하지 않았다면 법률 출처를 반환하지 않음
-    if answer_type == "CONTRACT":
-        verified_sources = []
-
-    timings["total"] = round(
-        time.perf_counter() - total_start, 6
-    )
+    # ========================================
+    # 9. 최종 응답 반환
+    # ========================================
 
     return ChatResponse(
-        answer=generated.answer,
+        answer=answer,
+
         answerType=answer_type,
+
         referencedContractIds=(
-            [selected_id] if selected_id is not None else []
+            referenced_contract_ids
         ),
-        legalSources=verified_sources,
-        needsMoreInfo=generated.needsMoreInfo,
+
+        legalSources=legal_sources,
+
+        needsMoreInfo=(
+            generated.needsMoreInfo
+        ),
+
         timings=timings,
     )
