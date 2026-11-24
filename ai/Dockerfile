@@ -8,6 +8,7 @@ COPY --chown=app:app main.py .
 COPY --chown=app:app extraction ./extraction
 COPY --chown=app:app masking ./masking
 COPY --chown=app:app rag ./rag
+COPY --chown=app:app chatbot ./chatbot
 COPY --chown=app:app data/legal ./data/legal
 RUN chown app:app /app
 USER app

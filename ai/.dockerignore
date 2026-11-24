@@ -10,3 +10,5 @@
 !data/
 !data/legal/
 !data/legal/**
+!chatbot/
+!chatbot/**
